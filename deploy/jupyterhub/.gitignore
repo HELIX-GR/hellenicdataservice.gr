@@ -1,0 +1,14 @@
+
+*.log
+*.retry
+
+scratch.yml
+
+hosts.conf
+hosts.yml
+
+ssh-config
+
+/.vagrant/
+
+/secrets/

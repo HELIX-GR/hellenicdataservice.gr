@@ -1,0 +1,88 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require 'yaml'
+
+inventory_file = ENV['INVENTORY_FILE'] || 'hosts.yml'
+
+inventory = YAML.load_file(inventory_file)
+inventory_vars = inventory['all']['vars']
+inventory_groups = inventory['all']['children']
+  
+Vagrant.configure(2) do |config|
+  config.vm.box = "ubuntu/xenial64"
+  config.vm.box_check_update = false
+
+  config.vm.synced_folder "./vagrant-data/", "/vagrant", type: "rsync"
+
+  # Define and provision manager
+
+  config.vm.define "manager" do |manager|
+    h = inventory_groups['manager']['hosts']['manager']
+    manager.vm.network "private_network", ip: h['ipv4_address']
+    manager.vm.provider "virtualbox" do |vb|
+      vb.name = h['fqdn']
+      vb.memory = 512
+    end
+
+    manager.vm.provision "ansible" do |a|
+      a.playbook = 'setup-docker-swarm.yml'
+      a.limit = 'all' # do not limit to manager (take workers into play)
+      a.compatibility_mode = "2.0"
+      a.become = true
+      a.become_user = 'root'
+      a.inventory_path = inventory_file
+      a.verbose = true
+    end
+    
+    manager.vm.provision "ansible" do |a|
+      a.playbook = 'setup-jupyterhub.yml'
+      a.compatibility_mode = "2.0"
+      a.become = true
+      a.become_user = 'jupyter'
+      a.inventory_path = inventory_file
+      a.verbose = true
+    end
+
+  end
+
+  # Define and provision workers
+
+  inventory_groups['workers']['hosts'].keys.each do |worker_name|
+    config.vm.define worker_name do |worker|
+      h = inventory_groups['workers']['hosts'][worker_name]
+      worker.vm.network "private_network", ip: h['ipv4_address']
+      worker.vm.provider "virtualbox" do |vb|
+         vb.name = h['fqdn']
+         vb.memory = 512
+      end
+    end
+  end
+
+  # Provision (common)
+  
+  config.vm.provision "file", source: "keys/id_rsa", destination: ".ssh/id_rsa"
+  config.vm.provision "shell", path: "scripts/copy-key.sh", privileged: false
+
+  config.vm.provision "file", source: "profile", destination: ".profile"
+  config.vm.provision "file", source: "bashrc", destination: ".bashrc"
+
+  config.vm.provision "shell", inline: <<-EOD
+    apt-get update
+    apt-get install -y sudo vim tree jq curl screen htop bash-completion python
+  EOD
+  
+  config.vm.provision "ansible" do |a| 
+    a.playbook = 'setup-basic.yml'
+    a.compatibility_mode = "2.0"
+    a.become = true
+    a.become_user = 'root'
+    a.inventory_path = inventory_file
+    a.verbose = true
+  end
+
+  config.vm.provision "shell", inline: <<-EOD
+    adduser vagrant docker
+  EOD
+
+end

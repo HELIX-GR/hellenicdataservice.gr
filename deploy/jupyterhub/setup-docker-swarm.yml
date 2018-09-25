@@ -1,0 +1,72 @@
+---
+
+ - hosts: all
+
+   pre_tasks:
+
+   - name: Check that a proper ipv4 network is specified
+     assert:
+       that: 
+       - (network is defined) and (network | ipaddr("network"))
+       - (ipv4_address is defined) and (ipv4_address | ipaddr(network))
+      
+   - set_fact:
+       primary_ipv4_address: '{{ansible_all_ipv4_addresses| ipaddr(network)| first}}'
+  
+   - set_fact:    
+       listen_address: '{{primary_ipv4_address}}'
+  
+   - name: Check that primary ipv4 address is discovered into facts
+     assert:
+       that: primary_ipv4_address == ipv4_address
+   
+   - name: Check if swarm mode is active
+     shell: |
+       docker info | grep -c -i 'swarm: active'
+     register: docker_info_swarm_is_active_result
+
+   - set_fact:
+       swarm_active: '{{docker_info_swarm_is_active_result.stdout| bool}}'
+
+   vars:
+
+     docker_compose_version: '1.16.1'
+
+   roles:
+   - 'docker-engine'
+   
+ 
+ - hosts: manager
+
+   tasks:
+   
+   - name: Initialize swarm mode
+     shell: docker swarm init --advertise-addr {{primary_ipv4_address}}
+     when: not swarm_active
+
+   - name: Get swarm token for joining a worker node
+     shell: docker swarm join-token -q worker
+     register: swarm_join_token_result
+
+   - set_fact:
+       swarm_join_token: '{{swarm_join_token_result.stdout}}'
+  
+   - debug:
+       msg: 'The join token is {{swarm_join_token}}'
+
+ 
+ - hosts: workers
+
+   tasks:
+    
+   - set_fact:
+       swarm_join_token: '{{hostvars["manager"].swarm_join_token}}'
+       swarm_manager_address: '{{hostvars["manager"].primary_ipv4_address}}'
+   
+   - debug: var=swarm_join_token 
+   - debug: var=swarm_manager_address 
+
+   - name: Join into swarm
+     shell: docker swarm join --token "{{swarm_join_token}}" "{{swarm_manager_address}}:2377" 
+     when: not swarm_active
+

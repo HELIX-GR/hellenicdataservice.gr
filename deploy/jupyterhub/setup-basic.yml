@@ -1,0 +1,115 @@
+---
+
+ #
+ # Basic setup
+ #
+
+ - hosts: all 
+   
+   tasks:
+   
+   - debug: var=play_hosts
+   - debug: var=groups.all
+   
+   - hostname: name={{hostname}}
+     when: hostname is defined
+
+   - name: Update /etc/hosts with local hostname
+     lineinfile:
+       dest: /etc/hosts
+       regexp: '^127\.0\.1\.1'
+       line: '127.0.1.1 {{ansible_hostname}} {{hostname}}'
+       state: present
+     when: hostname is defined 
+
+   - name: Update /etc/hosts with hostnames of this swarm
+     lineinfile:
+       dest: /etc/hosts
+       line: '{{hostvars[item].ipv4_address}} {{hostvars[item].hostname}} {{item}}'
+       insertafter: '^127\.0\.1\.1 .*'
+     with_items: '{{groups.all}}'
+
+   - group: name=wheel state=present
+   
+   - name: Add rules for sudoers (wheel)
+     copy:
+       dest: /etc/sudoers.d/wheel
+       content: '%wheel ALL=(ALL) NOPASSWD:ALL'
+
+   - name: Make user-local bin directories
+     file: path=~/bin state=directory
+
+ - hosts: manager
+
+   tasks:
+
+   - apt_repository: repo=ppa:deadsnakes/ppa state=present
+   - apt: update_cache=yes
+   
+   - apt: pkg={{item}} state=latest
+     with_items:
+     - 'python3.6' 
+     - 'python3.6-venv' 
+     - 'virtualenv'
+   
+   - name: Add user `jupyter` 
+     user: name=jupyter shell=/bin/bash groups=wheel
+   
+   - name: Create python environment
+     shell: virtualenv --python=python3.6 pyenv
+     args:
+       chdir: /home/jupyter
+       creates: /home/jupyter/pyenv
+     become: true
+     become_user: jupyter
+   
+   - file: path=/home/jupyter/bin state=directory owner=jupyter group=admin mode=0775
+   
+   - file: path=/home/jupyter/opt state=directory owner=jupyter group=admin mode=0775
+   
+   - file: path=/home/jupyter/var state=directory owner=jupyter group=admin mode=0775
+
+   - authorized_key:
+       user: jupyter
+       state: present
+       key: '{{lookup("file", "keys/id_rsa.pub")}}'
+
+ #
+ # Setup docker
+ #
+
+ - hosts: all
+
+   pre_tasks:
+
+   - name: Check that a proper ipv4 network is specified
+     assert:
+       that: 
+       - (network is defined) and (network | ipaddr("network"))
+       - (ipv4_address is defined) and (ipv4_address | ipaddr(network))
+      
+   - set_fact:
+       primary_ipv4_address: "{{ansible_all_ipv4_addresses| ipaddr(network)| first}}"
+  
+   - set_fact:    
+       listen_address: '{{primary_ipv4_address}}'
+  
+   - name: Check that primary ipv4 address is discovered into facts
+     assert:
+       that: primary_ipv4_address == ipv4_address
+
+   vars:
+
+     docker_compose_version: '1.16.1'
+
+   roles:
+   - 'docker-engine'
+
+ 
+ - hosts: manager
+
+   tasks: 
+
+   - name: Add user `jupyter` to docker group
+     user: name=jupyter groups=docker append=yes
+

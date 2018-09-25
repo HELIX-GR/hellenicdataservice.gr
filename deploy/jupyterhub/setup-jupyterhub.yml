@@ -1,0 +1,38 @@
+---
+
+ - hosts: manager
+
+   tasks:
+
+   - name: Copy requirements.txt for JupyterHub
+     copy: src=jupyterhub-requirements.txt dest=/home/jupyter/requirements.txt
+
+   - name: Install python requirements for Jupyter/JupyterHub
+     shell: |
+       . pyenv/bin/activate && pip3 install -r requirements.txt
+     args:
+       chdir: /home/jupyter
+
+   - name: Download nodejs
+     get_url: 
+       url: https://nodejs.org/dist/v8.12.0/node-v8.12.0-linux-x64.tar.xz
+       dest: /home/jupyter/opt/node.tar.xz
+       mode: 0664
+   
+   - file: path=/home/jupyter/opt/node state=directory mode=0775
+
+   - name: Unpack nodejs
+     shell: tar -x --strip-components=1 --file /home/jupyter/opt/node.tar.xz
+     args:
+       chdir: /home/jupyter/opt/node/
+       creates: /home/jupyter/opt/node/bin/node
+
+   - file: src=/home/jupyter/opt/node/bin/node path=/home/jupyter/bin/node state=link
+
+   - file: src=/home/jupyter/opt/node/bin/npm path=/home/jupyter/bin/npm state=link
+
+   - name: Install nodejs requirements for JupyterHub
+     shell: |
+       PATH=/home/jupyter/bin npm install -g configurable-http-proxy
+       
+

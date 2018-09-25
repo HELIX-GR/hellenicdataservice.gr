@@ -1,0 +1,74 @@
+---
+
+  - apt: pkg={{item}} state=latest
+    with_items: 
+    - 'jq' 
+    - 'bzip2' 
+    - 'p7zip-full'
+    - 'apt-transport-https'
+    - 'ca-certificates'
+    - 'gnupg2'
+    - 'software-properties-common'
+
+  #
+  # Install docker CE and utilities
+  #
+
+  - name: Add APT key for Docker repositories
+    apt_key:
+      url: 'https://download.docker.com/linux/ubuntu/gpg'
+      state: present
+
+  - name: Add APT repositories for Docker
+    apt_repository:
+      repo: 'deb https://download.docker.com/linux/ubuntu xenial stable'
+      state: present
+
+  - apt: update_cache=yes
+   
+  - apt: pkg=docker-ce state=latest
+  
+  - name: Download docker-compose binary
+    get_url:
+      url: 'https://github.com/docker/compose/releases/download/{{docker_compose_version}}/docker-compose-Linux-{{ansible_architecture}}'
+      dest: /usr/local/bin/docker-compose 
+      mode: 0774
+      owner: root
+      group: docker
+    when: docker_compose_version is defined
+
+  #
+  # Configure docker daemon
+  #
+
+  - file:
+      path: /etc/systemd/system/docker.socket.d
+      state: directory
+    
+  - name: Configure socket for docker daemon
+    template:
+      src: socket.conf.j2
+      dest: /etc/systemd/system/docker.socket.d/10-socket.conf
+      mode: 0600
+    when: listen_address is defined 
+
+  - name: Update kernel boot parameters to enable cgroups on memory
+    lineinfile:
+      dest: /etc/default/grub
+      regexp: '^GRUB_CMDLINE_LINUX_DEFAULT[ ]*='
+      line: 'GRUB_CMDLINE_LINUX_DEFAULT="quiet cgroup_enable=memory swapaccount=1"'  
+      mode: 0600
+      backup: no
+    notify:
+    - 'update-grub'
+
+  #
+  # Restart deamons
+  #
+
+  - name: Restart docker sockets
+    systemd:
+      name: docker.socket
+      daemon_reload: yes
+      state: restarted
+
