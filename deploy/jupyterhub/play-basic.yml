@@ -11,6 +11,11 @@
    - debug: var=play_hosts
    - debug: var=groups.all
    
+   - apt: update_cache=yes
+   
+   - apt: pkg={{item}} state=latest
+     with_items: [ 'vim', 'tree', 'jq', 'curl', 'screen', 'htop', 'bash-completion' ]
+  
    - hostname: name={{hostname}}
      when: hostname is defined
 
@@ -36,8 +41,11 @@
        dest: /etc/sudoers.d/wheel
        content: '%wheel ALL=(ALL) NOPASSWD:ALL'
 
-   - name: Make user-local bin directories
-     file: path=~/bin state=directory
+   - file: path=~/bin state=directory
+   
+   - copy: src=files/{{item.key}} dest=~/{{item.value}} mode=0644
+     with_dict: { 'profile': '.profile', 'bashrc': '.bashrc' }
+   
 
  - hosts: manager
 
@@ -47,32 +55,22 @@
    - apt: update_cache=yes
    
    - apt: pkg={{item}} state=latest
-     with_items:
-     - 'python3.6' 
-     - 'python3.6-venv' 
-     - 'virtualenv'
+     with_items: [ 'python3.6', 'python3.6-venv', 'virtualenv' ]
    
    - name: Add user `jupyter` 
      user: name=jupyter shell=/bin/bash groups=wheel
-   
-   - name: Create python environment
-     shell: virtualenv --python=python3.6 pyenv
-     args:
-       chdir: /home/jupyter
-       creates: /home/jupyter/pyenv
-     become: true
-     become_user: jupyter
-   
+      
    - file: path=/home/jupyter/bin state=directory owner=jupyter group=admin mode=0775
    
    - file: path=/home/jupyter/opt state=directory owner=jupyter group=admin mode=0775
-   
-   - file: path=/home/jupyter/var state=directory owner=jupyter group=admin mode=0775
 
    - authorized_key:
-       user: jupyter
+       user: '{{item.username}}'
        state: present
        key: '{{lookup("file", "keys/id_rsa.pub")}}'
+     with_items:
+     - { username: 'root' }
+     - { username: 'jupyter' }
 
  #
  # Setup docker

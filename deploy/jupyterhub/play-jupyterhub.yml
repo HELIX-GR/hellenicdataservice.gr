@@ -1,0 +1,82 @@
+---
+
+ - hosts: manager
+
+   tasks:
+   
+   - file: path=/usr/local/jupyterhub state=directory mode=0775 owner=jupyter group=admin
+   
+   - file: path=/var/local/jupyterhub state=directory mode=0775 owner=jupyter group=admin
+   
+   - file: path=/etc/jupyterhub state=directory mode=0775 owner=jupyter group=admin
+   
+   - name: Create python environment
+     shell: virtualenv --python=python3.6 pyenv
+     args:
+       chdir: /usr/local/jupyterhub
+       creates: /usr/local/jupyterhub/pyenv
+     become: true
+     become_user: jupyter
+
+   - name: Copy requirements.txt for JupyterHub
+     copy: src=files/jupyterhub/requirements.txt dest=/usr/local/jupyterhub/requirements.txt owner=jupyter group=admin
+
+   - name: Install python requirements for Jupyter/JupyterHub
+     shell: |
+       . pyenv/bin/activate && pip3 install -r requirements.txt
+     args:
+       chdir: /usr/local/jupyterhub/
+     become: true
+     become_user: jupyter
+
+   - name: Download nodejs
+     get_url: 
+       url: https://nodejs.org/dist/v8.12.0/node-v8.12.0-linux-x64.tar.xz
+       dest: /opt/node.tar.xz
+       owner: jupyter
+       group: admin
+       mode: 0664
+   
+   - file: path=/opt/node state=directory mode=0775 owner=jupyter group=admin
+
+   - name: Unpack nodejs into /opt/node
+     shell: tar -x --strip-components=1 --file /opt/node.tar.xz
+     args:
+       chdir: /opt/node/
+       creates: /opt/node/bin/node
+     become: true
+     become_user: jupyter
+
+   - name: Link to nodejs binaries
+     file: src=/opt/node/bin/{{item}} path=/usr/local/bin/{{item}} state=link
+     with_items: [ 'node', 'npm' ]
+
+   - name: Install nodejs requirements for JupyterHub
+     shell: npm install -g configurable-http-proxy
+     args:
+       creates: /opt/node/bin/configurable-http-proxy
+     become: true
+     become_user: jupyter
+
+   - file: src=/opt/node/bin/configurable-http-proxy path=/usr/local/bin/configurable-http-proxy state=link
+   
+   - name: Create directories for JupyterHub variable data
+     file: path=/var/local/jupyterhub/data state=directory mode=0775 owner=jupyter group=admin
+ 
+   - name: Copy server key for JupyterHub
+     copy: src=certs/server.key dest=/etc/jupyterhub/server.key owner=jupyter group=admin mode=0600
+
+   - name: Copy server certificate for JupyterHub
+     copy: src=certs/server.crt dest=/etc/jupyterhub/server.crt owner=jupyter group=admin mode=0644
+   
+   - name: Create directories for JupyterHub configuration profiles
+     file: path=/etc/jupyterhub/{{item}} state=directory mode=0775 owner=jupyter group=admin
+     with_items: [ 'default', 'default-ssl', 'oauth-github' ] 
+   
+   - name: Generate configuration for JupyterHub
+     template:
+       src: templates/jupyterhub/etc/{{item}}/config.py.j2
+       dest: /etc/jupyterhub/{{item}}/config.py
+       owner: jupyter 
+       group: admin
+     with_items: [ 'default', 'default-ssl', 'oauth-github' ]   

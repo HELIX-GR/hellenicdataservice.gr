@@ -22,7 +22,7 @@
    
    - name: Check if swarm mode is active
      shell: |
-       docker info | grep -c -i 'swarm: active'
+       docker info | grep -c -i 'swarm: active' | cat
      register: docker_info_swarm_is_active_result
 
    - set_fact:

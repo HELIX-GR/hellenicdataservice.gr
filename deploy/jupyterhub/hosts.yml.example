@@ -3,9 +3,14 @@
 all:
   vars:
     network: '10.0.4.0/24'
+    
+    jupyterhub:
+      client_id: xyz123
+      client_secret: s3cret 
+
+      public_base_url: https://jupyter-s1.helix.internal/
 
   children:
-
     'manager':
       hosts:
         'manager':
@@ -14,17 +19,14 @@ all:
           fqdn: jupyter-s1.helix.internal
           hostname: jupyter-s1-helix
           ipv4_address: '10.0.4.130'
-
     'workers':
       hosts:
-        
         'worker-1':
           ansible_host: jupyter-s1-worker-n1.helix.internal
           ansible_port: 22
           fqdn: jupyter-s1-worker-n1.helix.internal
           hostname: jupyter-s1-worker-n1-helix
           ipv4_address: '10.0.4.131'
-        
         'worker-2':
           ansible_host: jupyter-s1-worker-n2.helix.internal
           ansible_port: 22

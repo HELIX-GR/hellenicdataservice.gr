@@ -15,6 +15,10 @@ You must install `Ansible` on the control machine, preferably in a virtual Pytho
 Place your PEM-formatted private key under `keys/id_rsa` and corresponding public key under `keys/id_rsa.pub`. 
 Ensure that private key has proper permissions (`0600`).  
 
+### 0.3 Provide key/certificate pair for JupyterHub server ###
+
+Place the key/certificate pair for JupyterHub server under `certs/server.key` and `certs/server.crt`. 
+
 ## 1. Prepare inventory file ##
 
 An single inventory file should be created at `hosts.yml`. Both `vagrant` and `ansible` will use this same inventory.
@@ -22,20 +26,33 @@ An example inventory file can be found [here](hosts.yml.example).
 
 ## 2.1 Setup with Vagrant and Ansible ##
 
-If we want a full Vagrant environment (of course we will also need `vagrant` installed), then:
+If we want a full Vagrant environment (of course we will also need `vagrant` installed), setup the machines and provision in multiple phases.
+All phases, apart from the initial `vagrant up`, delegate their work to Ansible playbooks.
 
-    vagrant up
+Setup machines (networking, ansible prerequisites):
 
-In this case, `vagrant` will provide the virtual machines (via virtualbox), will setup the private network, 
-and then will delegate to an `ansible` playbook to actually setup the swarm nodes.
+    vagrant up --provision-with=shell,file
+    
+Setup basic infrastructure (basic software packages, docker engine):
+    
+    vagrant provision --provision-with=setup-basic
+    
+Setup docker swarm: 
+
+    vagrant provision --provision-with=setup-docker-swarm
+
+Setup JupyterHub: 
+    
+    vagrant provision --provision-with=setup-jupyterhub
 
 ## 2.2 Setup with Ansible only ##
 
 If the target machines (either virtual or physical) are already setup and networked (usually in a private network),
-then we can directly play the Ansible playbook:
+then we can directly play the Ansible playbooks:
 
-    # Prepare target hosts
-    ansible -m script -a install-ansible-prereqs.sh all
-    # Play
-    ansible-playbook play.yml
+    ansible-playbook -i hosts.yml play-basic.yml
+
+    ansible-playbook -i hosts.yml play-docker-swarm.yml
+    
+    ansible-playbook -i hosts.yml play-jupyterhub.yml
 

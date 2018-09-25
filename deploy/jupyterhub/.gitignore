@@ -11,4 +11,6 @@ ssh-config
 
 /.vagrant/
 
+/certs/*.key
+/certs/*.crt
 /secrets/
