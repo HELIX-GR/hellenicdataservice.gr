@@ -3,12 +3,6 @@
 all:
   vars:
     network: '10.0.4.0/24'
-    
-    jupyterhub:
-      client_id: xyz123
-      client_secret: s3cret 
-
-      public_base_url: https://jupyter-s1.helix.internal/
 
   children:
     'manager':

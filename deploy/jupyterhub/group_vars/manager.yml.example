@@ -1,0 +1,12 @@
+---
+
+jupyterhub:
+  
+  oauth:
+    github:
+       client_id: abc1234
+       client_secret: xyz1234 
+
+  users:
+    username_map: { 'drmalex07': 'malex' }
+    whitelist: [ 'jupyter', 'malex' ]

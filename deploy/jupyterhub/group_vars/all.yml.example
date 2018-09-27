@@ -1,0 +1,7 @@
+---
+
+jupyterhub:
+  
+  public_base_url: https://jupyter-s1.helix.internal/
+  
+  notebook_image: 'jupyterhub/singleuser:0.9'

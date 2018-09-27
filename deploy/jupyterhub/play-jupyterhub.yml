@@ -71,7 +71,7 @@
    
    - name: Create directories for JupyterHub configuration profiles
      file: path=/etc/jupyterhub/{{item}} state=directory mode=0775 owner=jupyter group=admin
-     with_items: [ 'default', 'default-ssl', 'oauth-github' ] 
+     with_items: [ 'default', 'default-ssl', 'oauth-github', 'dockerspawner-oauth-github' ] 
    
    - name: Generate configuration for JupyterHub
      template:
@@ -79,4 +79,13 @@
        dest: /etc/jupyterhub/{{item}}/config.py
        owner: jupyter 
        group: admin
-     with_items: [ 'default', 'default-ssl', 'oauth-github' ]   
+     with_items: [ 'default', 'default-ssl', 'oauth-github', 'dockerspawner-oauth-github' ] 
+
+
+
+ - hosts: all
+
+   tasks:
+
+   - name: Pull docker image for single-user notebook server
+     shell: docker pull {{jupyterhub.notebook_image}}

@@ -82,9 +82,9 @@ c.Application.log_level = 20
 #    and `data` is the POST form data from the login page.
 #c.JupyterHub.authenticator_class = 'jupyterhub.auth.PAMAuthenticator'
 
-# LocalGitHubOAuthenticator will authenticate a user and then will map the user
-# to a system user (see username_map) 
-c.JupyterHub.authenticator_class = 'oauthenticator.LocalGitHubOAuthenticator'
+# Use GitHubOAuthenticator (instead of LocalGitHubOAuthenticator) because we want users to
+# exist only at application level (they do not map to system users)
+c.JupyterHub.authenticator_class = 'oauthenticator.GitHubOAuthenticator'
 c.GitHubOAuthenticator.oauth_callback_url = '{{jupyterhub.public_base_url | regex_replace("\/$", "")}}/hub/oauth_callback'
 c.GitHubOAuthenticator.client_id = '{{jupyterhub.oauth.github.client_id}}'
 c.GitHubOAuthenticator.client_secret = '{{jupyterhub.oauth.github.client_secret}}'
@@ -227,7 +227,7 @@ c.JupyterHub.db_url = 'sqlite:////var/local/jupyterhub/data/jupyterhub.sqlite'
 #  requirements.
 #  
 #  .. versionadded:: 0.8
-#c.JupyterHub.hub_connect_ip = ''
+c.JupyterHub.hub_connect_ip = '{{ipv4_address}}'
 
 ## DEPRECATED
 #  
@@ -261,7 +261,7 @@ c.JupyterHub.db_url = 'sqlite:////var/local/jupyterhub/data/jupyterhub.sqlite'
 #  
 #  See `hub_connect_ip` for cases where the bind and connect address should
 #  differ, or `hub_bind_url` for setting the full bind URL.
-#c.JupyterHub.hub_ip = '127.0.0.1'
+c.JupyterHub.hub_ip = '{{ipv4_address}}'
 
 ## The internal port for the Hub process.
 #  
@@ -271,7 +271,7 @@ c.JupyterHub.db_url = 'sqlite:////var/local/jupyterhub/data/jupyterhub.sqlite'
 #  conflict.
 #  
 #  See also `hub_ip` for the ip and `hub_bind_url` for setting the full bind URL.
-#c.JupyterHub.hub_port = 8081
+c.JupyterHub.hub_port = 9081
 
 ## The public facing ip of the whole JupyterHub application (specifically
 #  referred to as the proxy).
@@ -372,6 +372,11 @@ c.JupyterHub.db_url = 'sqlite:////var/local/jupyterhub/data/jupyterhub.sqlite'
 #  
 #  Should be a subclass of Spawner.
 #c.JupyterHub.spawner_class = 'jupyterhub.spawner.LocalProcessSpawner'
+c.JupyterHub.spawner_class = 'dockerspawner.DockerSpawner'
+
+c.DockerSpawner.image = '{{jupyterhub.notebook_image}}'
+c.DockerSpawner.volumes = { 'jupyterhub-user-{username}': '/home/jovyan/work' }
+c.DockerSpawner.remove_containers = True
 
 ## Path to SSL certificate file for the public facing interface of the proxy
 #  
@@ -622,7 +627,8 @@ c.JupyterHub.ssl_key = '/etc/jupyterhub/server.key'
 #  
 #  Note that this does *not* prevent users from accessing files outside of this
 #  path! They can do so with many other means.
-c.Spawner.notebook_dir = '~/notebooks'
+#c.Spawner.notebook_dir = '/var/local/jupyter/notebooks'
+c.Spawner.notebook_dir = '/home/jovyan/work' # container-local directory inside jupyterhub/singleuser
 
 ## An HTML form for options a user can specify on launching their server.
 #  

@@ -7,10 +7,12 @@ scratch.yml
 hosts.conf
 hosts.yml
 
+group_vars/*.yml
+
 ssh-config
 
+/temp/
 /.vagrant/
-
 /certs/*.key
 /certs/*.crt
 /secrets/

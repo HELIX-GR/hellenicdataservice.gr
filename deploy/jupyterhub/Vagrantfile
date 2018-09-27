@@ -36,6 +36,7 @@ Vagrant.configure(2) do |config|
     
     manager.vm.provision "setup-jupyterhub", type: "ansible" do |ansible|
       ansible.playbook = 'play-jupyterhub.yml'
+      ansible.limit = 'all'
       ansible.become = true
       ansible.become_user = 'root'
       ansible.inventory_path = inventory_file

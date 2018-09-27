@@ -45,6 +45,11 @@
    
    - copy: src=files/{{item.key}} dest=~/{{item.value}} mode=0644
      with_dict: { 'profile': '.profile', 'bashrc': '.bashrc' }
+    
+   - authorized_key:
+       user: root
+       state: present
+       key: '{{lookup("file", "keys/id_rsa.pub")}}'
    
 
  - hosts: manager
@@ -61,16 +66,13 @@
      user: name=jupyter shell=/bin/bash groups=wheel
       
    - file: path=/home/jupyter/bin state=directory owner=jupyter group=admin mode=0775
-   
-   - file: path=/home/jupyter/opt state=directory owner=jupyter group=admin mode=0775
+     with_items: [ '/home/jupyter/bin', '/home/jupyter/opt' ] 
 
    - authorized_key:
-       user: '{{item.username}}'
+       user: jupyter
        state: present
        key: '{{lookup("file", "keys/id_rsa.pub")}}'
-     with_items:
-     - { username: 'root' }
-     - { username: 'jupyter' }
+
 
  #
  # Setup docker

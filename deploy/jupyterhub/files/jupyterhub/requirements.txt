@@ -2,3 +2,5 @@ jupyter
 jupyterhub
 notebook
 oauthenticator
+
+dockerspawner
