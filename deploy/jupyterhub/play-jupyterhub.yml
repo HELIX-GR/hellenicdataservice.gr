@@ -69,6 +69,13 @@
    - name: Copy server certificate for JupyterHub
      copy: src=certs/server.crt dest=/etc/jupyterhub/server.crt owner=jupyter group=admin mode=0644
    
+   - name: Copy user database in JSON format
+     copy:
+       content: '{{jupyterhub.users | to_json}}'
+       dest: /etc/jupyterhub/users.json 
+       owner: jupyter 
+       group: admin
+
    - name: Create directories for JupyterHub configuration profiles
      file: path=/etc/jupyterhub/{{item}} state=directory mode=0775 owner=jupyter group=admin
      with_items: [ 'default', 'default-ssl', 'oauth-github', 'dockerspawner-oauth-github' ] 

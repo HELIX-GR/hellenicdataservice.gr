@@ -8,5 +8,5 @@ jupyterhub:
        client_secret: xyz1234 
 
   users:
-    username_map: { 'drmalex07': 'malex' }
-    whitelist: [ 'jupyter', 'malex' ]
+    "drmalex07": {username: "malex", admin: false}
+    "drmalex07-develop": {username: "developer", admin: false}

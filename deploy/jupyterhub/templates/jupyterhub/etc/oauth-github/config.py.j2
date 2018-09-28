@@ -3,6 +3,12 @@
 
 # Configuration file for jupyterhub.
 
+import json
+
+users = None
+with open("/etc/jupyterhub/users.json") as f: users = json.load(f)
+
+
 #------------------------------------------------------------------------------
 # Application(SingletonConfigurable) configuration
 #------------------------------------------------------------------------------
@@ -81,6 +87,25 @@ c.Application.log_level = 20
 #    where `handler` is the calling web.RequestHandler,
 #    and `data` is the POST form data from the login page.
 #c.JupyterHub.authenticator_class = 'jupyterhub.auth.PAMAuthenticator'
+
+# If complex principal-to-username mapping logic is required, consider overriding `normalize_username` 
+# on chosen authenticator class (this will also eliminate the need for username_map and whitelist).
+# E.g.:
+#
+#class FilteringGitHubAuthenticator(oauthenticator.GitHubOAuthenticator):
+#    
+#    blacklist = ['malory']
+#    users = { 'drmalex07':  {'username': 'malex'}}
+#    
+#    def normalize_username(self, username):
+#        # The username is the principal under which user was authenticated
+#        if username in self.blacklist:
+#            return "" # an intentionally invalid username
+#        elif username in users:
+#            return users[username]['username']
+#        else:
+#            return username
+# 
 
 # LocalGitHubOAuthenticator will authenticate a user and then will map the user
 # to a system user (see username_map) 
@@ -822,7 +847,7 @@ c.Authenticator.admin_users = {'jupyter'}
 ## Dictionary mapping authenticator usernames to JupyterHub users.
 #  
 #  Primarily used to normalize OAuth user names to local users.
-c.Authenticator.username_map = {{jupyterhub.users.username_map | to_json}}
+c.Authenticator.username_map = {principal_name: user['username'] for principal_name, user in users.items()}
 
 ## Regular expression pattern that all valid usernames must match.
 #  
@@ -839,7 +864,7 @@ c.Authenticator.username_map = {{jupyterhub.users.username_map | to_json}}
 #  restrictions the authenticator has in place.
 #  
 #  If empty, does not perform any additional restriction.
-c.Authenticator.whitelist = {{jupyterhub.users.whitelist | to_json}}
+c.Authenticator.whitelist = [user['username'] for principal_name, user in users.items()]
 
 #------------------------------------------------------------------------------
 # LocalAuthenticator(Authenticator) configuration
