@@ -27,4 +27,12 @@ all:
           fqdn: jupyter-s1-worker-n2.helix.internal
           hostname: jupyter-s1-worker-n2-helix
           ipv4_address: '10.0.4.132'
-        
+    'nfs':
+      hosts:
+        'nfs':
+          ansible_host: nfs-s1.helix.internal
+          ansible_port: 22
+          fqdn: nfs-s1.helix.internal
+          hostname: nfs-s1-helix
+          ipv4_address: '10.0.4.140'
+           

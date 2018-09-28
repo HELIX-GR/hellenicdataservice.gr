@@ -14,7 +14,7 @@
    - apt: update_cache=yes
    
    - apt: pkg={{item}} state=latest
-     with_items: [ 'vim', 'tree', 'jq', 'curl', 'screen', 'htop', 'bash-completion' ]
+     with_items: [ 'vim', 'tree', 'jq', 'curl', 'screen', 'htop', 'bash-completion']
   
    - hostname: name={{hostname}}
      when: hostname is defined
@@ -78,7 +78,7 @@
  # Setup docker
  #
 
- - hosts: all
+ - hosts: ['manager', 'workers']
 
    pre_tasks:
 
@@ -112,4 +112,46 @@
 
    - name: Add user `jupyter` to docker group
      user: name=jupyter groups=docker append=yes
+
+#
+# Setup NFS server and clients
+#
+
+ - hosts: all
+
+   tasks:
+
+   - apt: pkg={{item}} state=latest
+     with_items: [ 'nfs-common' ]
+
+   - file: path={{item}} state=directory
+     with_items: [ '/mnt/nfs-backups', '/mnt/nfs-jupyterhub' ]
+ 
+   - lineinfile:
+       dest: /etc/fstab
+       regexp: '\s\/mnt\/nfs-jupyterhub\s'
+       line: >
+         {{hostvars['nfs'].hostname}}:/var/local/nfs/jupyterhub 
+         /mnt/nfs-jupyterhub nfs noauto,noexec,rsize=4096,hard,wsize=4096,intr 0 0
+       state: present
+
+ - hosts: nfs
+
+   tasks:
+
+   - apt: pkg={{item}} state=latest
+     with_items: [ 'nfs-kernel-server' ]
+   
+   - file: path=/var/local/nfs state=directory mode=0775 owner=nobody group=nogroup
+   
+   - file: path={{item}} state=directory mode=0775 owner=nobody group=nogroup
+     with_items: [ '/var/local/nfs/backups', '/var/local/nfs/jupyterhub' ]
+
+   - name: Generate /etc/exports
+     template:
+       src: templates/nfs/exports.j2
+       dest: /etc/exports
+
+   - name: Reload /etc/exports
+     shell: exportfs -a -v
 
