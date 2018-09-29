@@ -3,6 +3,12 @@
 
 # Configuration file for jupyterhub.
 
+import json
+
+users = None
+with open("/srv/jupyterhub/users.json") as f: 
+    users = json.load(f)
+
 #------------------------------------------------------------------------------
 # Application(SingletonConfigurable) configuration
 #------------------------------------------------------------------------------
@@ -48,7 +54,7 @@ c.Application.log_level = 20
 #c.JupyterHub.admin_access = False
 
 ## DEPRECATED since version 0.7.2, use Authenticator.admin_users instead.
-#c.JupyterHub.admin_users = {}
+#c.JupyterHub.admin_users = set()
 
 ## Allow named single-user servers per user
 #c.JupyterHub.allow_named_servers = False
@@ -81,6 +87,32 @@ c.Application.log_level = 20
 #    where `handler` is the calling web.RequestHandler,
 #    and `data` is the POST form data from the login page.
 #c.JupyterHub.authenticator_class = 'jupyterhub.auth.PAMAuthenticator'
+
+# If complex principal-to-username mapping logic is required, consider overriding `normalize_username` 
+# on chosen authenticator class (this will also eliminate the need for username_map and whitelist).
+# E.g.:
+#
+#class FilteringGitHubAuthenticator(oauthenticator.GitHubOAuthenticator):
+#    
+#    blacklist = ['mallory', 'eve']
+#    users = { 'drmalex07':  {'username': 'malex'}}
+#    
+#    def normalize_username(self, username):
+#        # The username is the principal under which user was authenticated
+#        if username in self.blacklist:
+#            return "" # an intentionally invalid username
+#        elif username in users:
+#            return users[username]['username']
+#        else:
+#            return username
+# 
+
+# Use GitHubOAuthenticator (instead of LocalGitHubOAuthenticator) because we want users to
+# exist only at application level (they do not map to system users)
+c.JupyterHub.authenticator_class = 'oauthenticator.GitHubOAuthenticator'
+c.GitHubOAuthenticator.oauth_callback_url = '{{jupyterhub.public_base_url | regex_replace("\/$", "")}}/hub/oauth_callback'
+c.GitHubOAuthenticator.client_id = '{{jupyterhub.oauth.github.client_id}}'
+c.GitHubOAuthenticator.client_secret = '{{jupyterhub.oauth.github.client_secret}}'
 
 ## The base URL of the entire application.
 #  
@@ -243,7 +275,9 @@ c.JupyterHub.db_url = 'sqlite:////var/local/jupyterhub/data/jupyterhub.sqlite'
 #      JupyterHub.hub_bind_url
 #  
 #  .. versionadded:: 0.9
-#c.JupyterHub.hub_connect_url = ''
+
+# Resolve by name (as demonstrated by JupyterHub service) 
+c.JupyterHub.hub_connect_url = 'http://jupyterhub:9081'
 
 ## The ip address for the Hub process to *bind* to.
 #  
@@ -254,7 +288,7 @@ c.JupyterHub.db_url = 'sqlite:////var/local/jupyterhub/data/jupyterhub.sqlite'
 #  
 #  See `hub_connect_ip` for cases where the bind and connect address should
 #  differ, or `hub_bind_url` for setting the full bind URL.
-#c.JupyterHub.hub_ip = '127.0.0.1'
+#c.JupyterHub.hub_ip = ''
 
 ## The internal port for the Hub process.
 #  
@@ -264,7 +298,7 @@ c.JupyterHub.db_url = 'sqlite:////var/local/jupyterhub/data/jupyterhub.sqlite'
 #  conflict.
 #  
 #  See also `hub_ip` for the ip and `hub_bind_url` for setting the full bind URL.
-#c.JupyterHub.hub_port = 8081
+c.JupyterHub.hub_port = 9081
 
 ## The public facing ip of the whole JupyterHub application (specifically
 #  referred to as the proxy).
@@ -364,17 +398,37 @@ c.JupyterHub.db_url = 'sqlite:////var/local/jupyterhub/data/jupyterhub.sqlite'
 ## The class to use for spawning single-user servers.
 #  
 #  Should be a subclass of Spawner.
-#c.JupyterHub.spawner_class = 'jupyterhub.spawner.LocalProcessSpawner'
+
+#c.JupyterHub.spawner_class = 'dockerspawner.SwarmSpawner'
+from dockerspawner import SwarmSpawner
+
+c.JupyterHub.spawner_class = SwarmSpawner
+
+c.DockerSpawner.image = 'jupyterhub/singleuser:0.9'
+#c.DockerSpawner.volumes = { 'jupyterhub-user-{username}': '/home/jovyan/work' }
+#c.DockerSpawner.volumes = { '/mnt/nfs-jupyterhub/notebooks/user-{username}': '/home/jovyan/work' }
+
+c.SwarmSpawner.network_name = 'jupyterhub_network'
+c.SwarmSpawner.extra_host_config = {'network_mode': 'jupyterhub_network'}
+
+# Note: Patch SwarmSpawner to prevent from adding a volume driver (non-applicable to bind mounts!)
+SwarmSpawner.mount_driver_config = property(lambda spawner: None)
+
+c.SwarmSpawner.volumes = {
+    '/mnt/nfs-jupyterhub/notebooks/users/{username}': {
+        'bind': '/home/jovyan/work', # the target of our bind (container-local directory)
+        'mode': 'rw'},
+};
 
 ## Path to SSL certificate file for the public facing interface of the proxy
 #  
 #  When setting this, you should also set ssl_key
-c.JupyterHub.ssl_cert = '/etc/jupyterhub/server.crt'
+c.JupyterHub.ssl_cert = '/srv/jupyterhub/server.crt'
 
 ## Path to SSL key file for the public facing interface of the proxy
 #  
 #  When setting this, you should also set ssl_cert
-c.JupyterHub.ssl_key = '/etc/jupyterhub/server.key'
+c.JupyterHub.ssl_key = '/srv/jupyterhub/server.key'
 
 ## Host to send statsd metrics to. An empty string (the default) disables sending
 #  metrics.
@@ -615,7 +669,8 @@ c.JupyterHub.ssl_key = '/etc/jupyterhub/server.key'
 #  
 #  Note that this does *not* prevent users from accessing files outside of this
 #  path! They can do so with many other means.
-c.Spawner.notebook_dir = '~/notebooks'
+#c.Spawner.notebook_dir = '/var/local/jupyter/notebooks'
+c.Spawner.notebook_dir = '/home/jovyan/work' # container-local directory inside jupyterhub/singleuser
 
 ## An HTML form for options a user can specify on launching their server.
 #  
@@ -771,7 +826,7 @@ c.Spawner.notebook_dir = '~/notebooks'
 #  Admin access should be treated the same way root access is.
 #  
 #  Defaults to an empty set, in which case no user has admin access.
-c.Authenticator.admin_users = {"jupyter"}
+c.Authenticator.admin_users = {'jupyter'}
 
 ## Automatically begin the login process
 #  
@@ -815,7 +870,7 @@ c.Authenticator.admin_users = {"jupyter"}
 ## Dictionary mapping authenticator usernames to JupyterHub users.
 #  
 #  Primarily used to normalize OAuth user names to local users.
-#c.Authenticator.username_map = {}
+c.Authenticator.username_map = {principal_name: user['username'] for principal_name, user in users.items()}
 
 ## Regular expression pattern that all valid usernames must match.
 #  
@@ -832,7 +887,8 @@ c.Authenticator.admin_users = {"jupyter"}
 #  restrictions the authenticator has in place.
 #  
 #  If empty, does not perform any additional restriction.
-c.Authenticator.whitelist = {"jupyter"}
+c.Authenticator.whitelist = [user['username'] for principal_name, user in users.items()]
+#c.Authenticator.whitelist = set()
 
 #------------------------------------------------------------------------------
 # LocalAuthenticator(Authenticator) configuration

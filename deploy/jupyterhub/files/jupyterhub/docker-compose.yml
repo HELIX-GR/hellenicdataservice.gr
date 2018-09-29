@@ -1,0 +1,33 @@
+
+version: '3'
+services:
+
+  jupyterhub:
+    image: local/jupyterhub:0.9
+    build:
+      context: '.'
+
+    hostname: jupyterhub
+
+    volumes:
+    - "/var/run/docker.sock:/var/run/docker.sock"
+    - "/var/local/jupyterhub/data:/var/local/jupyterhub/data/"
+    - "${PWD}/users.json:/srv/jupyterhub/users.json"
+  
+    networks:
+    - 'jupyterhub_network'
+   
+    ports:
+    - '443:8443'
+
+    environment:
+      DOCKER_NETWORK_NAME: 'jupyterhub_network'
+
+    deploy:
+      replicas: 1
+      # ensure that we execute on a Swarm manager
+      placement:
+        constraints: [ 'node.role == manager' ]
+
+networks:
+  jupyterhub_network: {external: true}

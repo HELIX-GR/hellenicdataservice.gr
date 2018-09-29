@@ -8,61 +8,21 @@
    
    - file: path=/var/local/jupyterhub state=directory mode=0775 owner=jupyter group=admin
    
+   - file: path=/var/local/jupyterhub/data state=directory mode=0775 owner=jupyter group=admin
+   
    - file: path=/etc/jupyterhub state=directory mode=0775 owner=jupyter group=admin
    
    - name: Create python environment
      shell: virtualenv --python=python3.6 pyenv
      args:
-       chdir: /usr/local/jupyterhub
-       creates: /usr/local/jupyterhub/pyenv
+       chdir: ~jupyter
+       creates: ~jupyter/pyenv
      become: true
      become_user: jupyter
-
-   - name: Copy requirements.txt for JupyterHub
-     copy: src=files/jupyterhub/requirements.txt dest=/usr/local/jupyterhub/requirements.txt owner=jupyter group=admin
-
-   - name: Install python requirements for Jupyter/JupyterHub
-     shell: |
-       . pyenv/bin/activate && pip3 install -r requirements.txt
-     args:
-       chdir: /usr/local/jupyterhub/
-     become: true
-     become_user: jupyter
-
-   - name: Download nodejs
-     get_url: 
-       url: https://nodejs.org/dist/v8.12.0/node-v8.12.0-linux-x64.tar.xz
-       dest: /opt/node.tar.xz
-       owner: jupyter
-       group: admin
-       mode: 0664
    
-   - file: path=/opt/node state=directory mode=0775 owner=jupyter group=admin
+   - name: Create parent directory for docker-compose project
+     file: path=~jupyter/workspace/jupyterhub state=directory mode=0775 owner=jupyter group=admin
 
-   - name: Unpack nodejs into /opt/node
-     shell: tar -x --strip-components=1 --file /opt/node.tar.xz
-     args:
-       chdir: /opt/node/
-       creates: /opt/node/bin/node
-     become: true
-     become_user: jupyter
-
-   - name: Link to nodejs binaries
-     file: src=/opt/node/bin/{{item}} path=/usr/local/bin/{{item}} state=link
-     with_items: [ 'node', 'npm' ]
-
-   - name: Install nodejs requirements for JupyterHub
-     shell: npm install -g configurable-http-proxy
-     args:
-       creates: /opt/node/bin/configurable-http-proxy
-     become: true
-     become_user: jupyter
-
-   - file: src=/opt/node/bin/configurable-http-proxy path=/usr/local/bin/configurable-http-proxy state=link
-   
-   - name: Create directories for JupyterHub variable data
-     file: path=/var/local/jupyterhub/data state=directory mode=0775 owner=jupyter group=admin
- 
    - name: Copy server key for JupyterHub
      copy: src=certs/server.key dest=/etc/jupyterhub/server.key owner=jupyter group=admin mode=0600
 
@@ -76,21 +36,50 @@
        owner: jupyter 
        group: admin
 
-   - name: Create directories for JupyterHub configuration profiles
-     file: path=/etc/jupyterhub/{{item}} state=directory mode=0775 owner=jupyter group=admin
-     with_items: [ 'default', 'default-ssl', 'oauth-github', 'dockerspawner-oauth-github' ] 
+   - file: src=/etc/jupyterhub/{{item}} path=~jupyter/workspace/jupyterhub/{{item}} state=hard
+     with_items: [ 'server.key', 'server.crt', 'users.json' ]  
    
-   - name: Generate configuration for JupyterHub
-     template:
-       src: templates/jupyterhub/etc/{{item}}/config.py.j2
-       dest: /etc/jupyterhub/{{item}}/config.py
+   - name: Copy service descriptor in docker-compose.yml
+     copy:
+       src: files/jupyterhub/docker-compose.yml
+       dest: ~jupyter/workspace/jupyterhub/docker-compose.yml 
        owner: jupyter 
        group: admin
-     with_items: [ 'default', 'default-ssl', 'oauth-github', 'dockerspawner-oauth-github' ] 
 
+   - name: Copy Dockerfile
+     copy:
+       src: files/jupyterhub/Dockerfile
+       dest: ~jupyter/workspace/jupyterhub/Dockerfile
+       owner: jupyter 
+       group: admin
 
+   - name: Generate configuration for JupyterHub 
+     template:
+       src: templates/jupyterhub/config.py.j2
+       dest: ~jupyter/workspace/jupyterhub/jupyterhub_config.py
+       owner: jupyter 
+       group: admin
+   
+   - name: Copy Readme
+     copy:
+       src: files/jupyterhub/README-compose.md
+       dest: ~jupyter/workspace/jupyterhub/README.md
+       owner: jupyter 
+       group: admin
 
- - hosts: all
+   - name: Check if private network exists
+     shell: docker network ls --quiet --filter='Name=jupyterhub_network'
+     register: docker_network_search_result
+
+   - set_fact:
+       jupyterhub_network_id: '{{docker_network_search_result.stdout}}'  
+
+   - name: Create private (overlay) network for JupyterHub
+     shell: docker network create --driver overlay --attachable jupyterhub_network
+     when: not jupyterhub_network_id
+   
+ 
+ - hosts: [ 'manager', 'workers' ]
 
    tasks:
 
