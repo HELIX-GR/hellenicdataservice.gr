@@ -50,9 +50,9 @@ Setup JupyterHub:
 If the target machines (either virtual or physical) are already setup and networked (usually in a private network),
 then we can directly play the Ansible playbooks:
 
-    ansible-playbook -i hosts.yml play-basic.yml
+    ansible-playbook -u root play-basic.yml
 
-    ansible-playbook -i hosts.yml play-docker-swarm.yml
+    ansible-playbook -u root [-e listen_to_primary_ipv4_address=1] play-docker-swarm.yml
     
-    ansible-playbook -i hosts.yml play-jupyterhub.yml
+    ansible-playbook -u root play-jupyterhub.yml
 

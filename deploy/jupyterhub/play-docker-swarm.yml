@@ -15,6 +15,7 @@
   
    - set_fact:    
        listen_address: '{{primary_ipv4_address}}'
+     when: listen_to_primary_ipv4_address is defined
   
    - name: Check that primary ipv4 address is discovered into facts
      assert:
