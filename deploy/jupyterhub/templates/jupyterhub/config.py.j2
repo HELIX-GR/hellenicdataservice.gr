@@ -414,6 +414,9 @@ c.SwarmSpawner.extra_host_config = {'network_mode': 'jupyterhub_network'}
 # Note: Patch SwarmSpawner to prevent from adding a volume driver (non-applicable to bind mounts!)
 SwarmSpawner.mount_driver_config = property(lambda spawner: None)
 
+# Patch SwarmSpawner to provide different escaping for a username (used to compose the service name)
+SwarmSpawner.escaped_name = property(lambda spawner: spawner.user.name.replace('@','__at__').replace('.','_'))
+
 c.SwarmSpawner.volumes = {
     '/mnt/nfs-jupyterhub/notebooks/users/{username}': {
         'bind': '/home/jovyan/work', # the target of our bind (container-local directory)
