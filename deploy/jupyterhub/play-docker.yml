@@ -1,0 +1,41 @@
+---
+ 
+ #
+ # Setup docker service
+ #
+
+ - hosts: ['manager', 'workers']
+
+   pre_tasks:
+
+   - name: Check that a proper ipv4 network is specified
+     assert:
+       that: 
+       - (network is defined) and (network | ipaddr("network"))
+       - (ipv4_address is defined) and (ipv4_address | ipaddr(network))
+      
+   - set_fact:
+       primary_ipv4_address: "{{ansible_all_ipv4_addresses| ipaddr(network)| first}}"
+  
+   - set_fact:    
+       listen_address: '{{primary_ipv4_address}}'
+     when: listen_to_primary_ipv4_address is defined
+
+   - name: Check that primary ipv4 address is discovered into facts
+     assert:
+       that: primary_ipv4_address == ipv4_address
+
+   vars:
+     docker_compose_version: '1.16.1'
+
+   roles:
+   - 'docker-engine'
+
+ 
+ - hosts: manager
+
+   tasks: 
+
+   - name: Add user `jupyter` to docker group
+     user: name=jupyter groups=docker append=yes
+

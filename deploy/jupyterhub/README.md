@@ -8,7 +8,7 @@ You must install `Ansible` on the control machine, preferably in a virtual Pytho
 
     virtualenv pyenv
     . pyenv/bin/activate
-    pip install ansible==2.2 netaddr
+    pip install ansible==2.3 netaddr
 
 ### 0.2 Provide SSH keys ###
 
@@ -18,6 +18,16 @@ Ensure that private key has proper permissions (`0600`).
 ### 0.3 Provide key/certificate pair for JupyterHub server ###
 
 Place the key/certificate pair for JupyterHub server under `certs/server.key` and `certs/server.crt`. 
+
+### 0.4 Create disk storage for NFS exports
+
+Create a VDI disk image to hold user data (notebooks etc.). For example (size in megabytes):
+
+    vboxmanage createmedium disk --filename $PWD/data/1.vdi --size "$(( 4 * 1024 ))" --format VDI
+
+Verify image is created, and note UUID:
+
+    vboxmanage showmediuminfo disk $PWD/data/1.vdi
 
 ## 1. Prepare inventory file ##
 
@@ -33,9 +43,11 @@ Setup machines (networking, ansible prerequisites):
 
     vagrant up --provision-with=shell,file
     
-Setup basic infrastructure (basic software packages, docker engine):
+Setup basic infrastructure (basic software packages, docker engine, NFS server and clients):
     
     vagrant provision --provision-with=setup-basic
+    vagrant provision --provision-with=setup-docker
+    vagrant provision --provision-with=setup-nfs
     
 Setup docker swarm: 
 
@@ -51,6 +63,8 @@ If the target machines (either virtual or physical) are already setup and networ
 then we can directly play the Ansible playbooks:
 
     ansible-playbook -u root play-basic.yml
+    ansible-playbook -u root play-docker.yml
+    ansible-playbook -u root play-nfs.yml
 
     ansible-playbook -u root [-e listen_to_primary_ipv4_address=1] play-docker-swarm.yml
     

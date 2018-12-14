@@ -30,7 +30,6 @@
        swarm_active: '{{docker_info_swarm_is_active_result.stdout| bool}}'
 
    vars:
-
      docker_compose_version: '1.16.1'
 
    roles:

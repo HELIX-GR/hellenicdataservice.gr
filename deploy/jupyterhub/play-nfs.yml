@@ -1,0 +1,109 @@
+---
+
+#
+# Setup NFS server
+#
+
+ - hosts: nfs
+
+   tasks:
+
+   - apt: pkg={{item}} state=latest
+     with_items: [ 'nfs-kernel-server' ]
+
+   # Note: if `data_partition` is not defined, we assume that a new partition must 
+   # be created and be formatted as an XFS filesystem.
+
+   - name: Find the block device that is not yet partitioned
+     shell: >
+       lsblk --json -o NAME,UUID | 
+          jq '.blockdevices[] | select(.children == null and .uuid == null)' |
+          jq --slurp --raw-output 'map(.name) | first // empty'
+     register: device_to_be_partitioned_result
+     when: data_partition is not defined
+
+   - set_fact:
+       device_to_be_partitioned: '{{device_to_be_partitioned_result.stdout | default("")}}'  
+     when: data_partition is not defined
+
+   - name: Partition storage device, if not already partitioned
+     parted:
+       device: '/dev/{{device_to_be_partitioned}}'
+       number: 1
+       state: present
+     when: data_partition is not defined and device_to_be_partitioned != ''
+   
+   - name: Check primary partition created
+     shell: >
+       lsblk --json -o NAME,PARTUUID "/dev/{{device_to_be_partitioned}}1" | 
+         jq -e '.blockdevices[] | .partuuid'
+     register: partition_uuid_result
+     when: data_partition is not defined and device_to_be_partitioned != ''
+
+   - set_fact:
+       data_partition: '/dev/{{device_to_be_partitioned}}1' 
+     when: data_partition is not defined and device_to_be_partitioned != ''
+   
+   - assert:
+       that: data_partition is defined
+
+   - name: Make XFS filesystem on partition
+     filesystem:
+       fstype: xfs
+       dev: '{{data_partition}}'
+
+   - name: Find UUID of data partition
+     shell: >
+       lsblk -O --json /dev/sdc1 | jq -e --raw-output '.blockdevices[] | .uuid'
+     register: data_partition_uuid_result
+   
+   - set_fact:
+       data_partition_uuid: '{{data_partition_uuid_result.stdout}}'
+
+   - name: Create root directory for NFS exports
+     file: path=/var/local/nfs state=directory mode=0775 owner=nobody group=nogroup
+   
+   - name: Add entry in /etc/fstab for data partition
+     mount: 
+       name: /var/local/nfs 
+       src: 'UUID={{data_partition_uuid}}' 
+       fstype: xfs 
+       opts: defaults,uquota,pquota 
+       state: mounted
+   
+   - file: path={{item}} state=directory mode=0775 owner=nobody group=nogroup
+     with_items: [ '/var/local/nfs/backups', '/var/local/nfs/jupyterhub' ]
+
+   - name: Generate /etc/exports
+     template:
+       src: templates/nfs/exports.j2
+       dest: /etc/exports
+
+   - name: Reload /etc/exports
+     shell: exportfs -a -v
+
+#
+# Setup NFS clients
+#
+
+ - hosts: all
+
+   tasks:
+    
+   - set_fact:
+       nfs_server: '{{hostvars["nfs"].hostname}}'
+
+   - apt: pkg={{item}} state=latest
+     with_items: [ 'nfs-common' ]
+
+   - file: path={{item}} state=directory
+     with_items: [ '/mnt/nfs-backups', '/mnt/nfs-jupyterhub' ]
+    
+   - name: Add entry in /etc/fstab for NFS directory
+     mount: 
+       name: /mnt/nfs-jupyterhub
+       src: '{{nfs_server}}:/var/local/nfs/jupyterhub'
+       fstype: nfs 
+       opts: noauto,noexec,rsize=4096,hard,wsize=4096,intr
+       state: present
+

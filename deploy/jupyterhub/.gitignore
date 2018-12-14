@@ -3,6 +3,7 @@
 *.retry
 
 scratch.yml
+scratch-*.yml
 
 hosts.conf
 hosts.yml
@@ -11,6 +12,7 @@ group_vars/*.yml
 
 ssh-config
 
+/data/
 /temp/
 /.vagrant/
 /certs/*.key
