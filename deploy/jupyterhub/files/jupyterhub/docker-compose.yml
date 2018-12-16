@@ -12,7 +12,10 @@ services:
     volumes:
     - "/var/run/docker.sock:/var/run/docker.sock"
     - "/var/local/jupyterhub/data:/var/local/jupyterhub/data/"
-    - "${PWD}/users.json:/srv/jupyterhub/users.json"
+    - "/etc/jupyterhub/users.json:/etc/jupyterhub/users.json"
+    - "/etc/jupyterhub/server.crt:/etc/jupyterhub/server.crt:ro"
+    - "/etc/jupyterhub/server.key:/etc/jupyterhub/server.key:ro"
+    - "$PWD/jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py"
   
     networks:
     - 'jupyterhub_network'

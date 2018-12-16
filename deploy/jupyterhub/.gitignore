@@ -15,6 +15,7 @@ ssh-config
 /data/
 /temp/
 /.vagrant/
+/trusted-certs/
 /certs/*.key
 /certs/*.crt
 /secrets/

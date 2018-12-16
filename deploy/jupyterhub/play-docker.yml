@@ -1,7 +1,30 @@
 ---
- 
+  
  #
- # Setup docker service
+ # Setup data directories for docker
+ #
+
+ - hosts: ['manager', 'workers']
+
+   vars:
+     #data_partition: /dev/sdc1
+     data_partition: ~
+     fstype: 'xfs'
+     mountpoint: {path: '/var/lib/docker', owner: 'root', group: 'adm', opts: 'defaults,pquota'} 
+   
+   roles:
+   - 'local-fs'
+
+   tasks:
+    
+   - stat: path=/var/lib/docker
+     register: data_stat_result
+   - assert: 
+       that: data_stat_result.stat.isdir
+
+
+ #
+ # Install docker service
  #
 
  - hosts: ['manager', 'workers']
@@ -31,7 +54,19 @@
    roles:
    - 'docker-engine'
 
- 
+   tasks:
+
+   - name: Create directories for trusted docker registries (if any)
+     file: path=/etc/docker/certs.d/{{item.key}} state=directory mode=0755
+     with_dict: '{{docker.registry}}'
+   
+   - name: Trust docker registries (if any)
+     copy: src={{item.value.certificate}} dest=/etc/docker/certs.d/{{item.key}}/ca.crt
+     with_dict: '{{docker.registry}}'
+   
+   - name: Restart docker service
+     systemd: name=docker.service state=restarted
+
  - hosts: manager
 
    tasks: 

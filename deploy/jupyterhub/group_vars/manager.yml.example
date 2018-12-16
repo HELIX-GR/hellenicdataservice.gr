@@ -1,7 +1,9 @@
 ---
 
 jupyterhub:
-  
+
+  version: '0.9'
+
   oauth:
     github:
        client_id: abc1234

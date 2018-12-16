@@ -1,6 +1,6 @@
 ---
 
- - hosts: all
+ - hosts: ['manager', 'workers']
 
    pre_tasks:
 
@@ -22,7 +22,7 @@
        that: primary_ipv4_address == ipv4_address
    
    - name: Check if swarm mode is active
-     shell: |
+     shell: >
        docker info | grep -c -i 'swarm: active' | cat
      register: docker_info_swarm_is_active_result
 

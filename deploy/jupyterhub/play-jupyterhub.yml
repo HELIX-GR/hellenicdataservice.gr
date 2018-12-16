@@ -19,9 +19,6 @@
        creates: ~jupyter/pyenv
      become: true
      become_user: jupyter
-   
-   - name: Create parent directory for docker-compose project
-     file: path=~jupyter/workspace/jupyterhub state=directory mode=0775 owner=jupyter group=admin
 
    - name: Copy server key for JupyterHub
      copy: src=certs/server.key dest=/etc/jupyterhub/server.key owner=jupyter group=admin mode=0600
@@ -30,42 +27,23 @@
      copy: src=certs/server.crt dest=/etc/jupyterhub/server.crt owner=jupyter group=admin mode=0644
    
    - name: Copy user database in JSON format
-     copy:
-       content: '{{jupyterhub.users | to_json}}'
-       dest: /etc/jupyterhub/users.json 
-       owner: jupyter 
-       group: admin
-
-   - file: src=/etc/jupyterhub/{{item}} path=~jupyter/workspace/jupyterhub/{{item}} state=hard
-     with_items: [ 'server.key', 'server.crt', 'users.json' ]  
+     copy: content={{jupyterhub.users | to_nice_json}} dest=/etc/jupyterhub/users.json owner=jupyter group=admin
    
    - name: Copy service descriptor in docker-compose.yml
-     copy:
-       src: files/jupyterhub/docker-compose.yml
-       dest: ~jupyter/workspace/jupyterhub/docker-compose.yml 
-       owner: jupyter 
-       group: admin
+     copy: src=files/jupyterhub/docker-compose.yml dest=/usr/local/jupyterhub/docker-compose.yml owner=jupyter group=admin
 
    - name: Copy Dockerfile
-     copy:
-       src: files/jupyterhub/Dockerfile
-       dest: ~jupyter/workspace/jupyterhub/Dockerfile
-       owner: jupyter 
-       group: admin
+     template: src=templates/jupyterhub/Dockerfile.j2 dest=/usr/local/jupyterhub/Dockerfile owner=jupyter group=admin
 
    - name: Generate configuration for JupyterHub 
-     template:
-       src: templates/jupyterhub/config.py.j2
-       dest: ~jupyter/workspace/jupyterhub/jupyterhub_config.py
-       owner: jupyter 
-       group: admin
+     template: src=templates/jupyterhub/config.py.j2 dest=/usr/local/jupyterhub/jupyterhub_config.py owner=jupyter group=admin
    
-   - name: Copy Readme
-     copy:
-       src: files/jupyterhub/README-compose.md
-       dest: ~jupyter/workspace/jupyterhub/README.md
-       owner: jupyter 
-       group: admin
+   - name: Copy README
+     copy: src=files/jupyterhub/README-compose.md dest=/usr/local/jupyterhub/README.md owner=jupyter group=admin
+
+   - name: Pull docker image for JupyterHub application
+     shell: >
+       docker pull '{{jupyterhub.registry + "/" if jupyterhub.registry else ""}}jupyterhub/jupyterhub:{{jupyterhub.version}}'
 
    - name: Check if private network exists
      shell: docker network ls --quiet --filter='Name=jupyterhub_network'
@@ -77,11 +55,32 @@
    - name: Create private (overlay) network for JupyterHub
      shell: docker network create --driver overlay --attachable jupyterhub_network
      when: not jupyterhub_network_id
-   
- 
+
+
  - hosts: [ 'manager', 'workers' ]
 
-   tasks:
+   tasks:   
+   
+   - set_fact:
+       nfs_server: '{{hostvars["nfs"].hostname}}'
 
    - name: Pull docker image for single-user notebook server
-     shell: docker pull {{jupyterhub.notebook_image}}
+     shell: >
+       docker pull '{{jupyterhub.registry + "/" if jupyterhub.registry else ""}}{{item}}'
+     with_items: '{{jupyterhub.notebook_images}}'
+   
+   - name: Mount NFS directory for user data
+     mount:
+       name: /mnt/nfs-jupyterhub
+       src: '{{nfs_server}}:/var/local/nfs/jupyterhub'
+       fstype: nfs 
+       opts: noauto,noexec,rsize=4096,hard,wsize=4096,intr
+       state: mounted
+
+
+ - hosts: manager
+   
+   tasks:
+
+   - name: Create directory structure for user data
+     file: path=/mnt/nfs-jupyterhub/work/users state=directory mode=0755

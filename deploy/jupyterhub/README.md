@@ -19,15 +19,15 @@ Ensure that private key has proper permissions (`0600`).
 
 Place the key/certificate pair for JupyterHub server under `certs/server.key` and `certs/server.crt`. 
 
-### 0.4 Create disk storage for NFS exports
+### 0.4 Create disk storage
 
-Create a VDI disk image to hold user data (notebooks etc.). For example (size in megabytes):
+Run the (local) ansible playbook to create all needed VDI disk images:
 
-    vboxmanage createmedium disk --filename $PWD/data/1.vdi --size "$(( 4 * 1024 ))" --format VDI
+    ansible-playbook -v -i hosts.yml prepare-disk-images.yml
 
-Verify image is created, and note UUID:
+Verify images are created. For example:
 
-    vboxmanage showmediuminfo disk $PWD/data/1.vdi
+    vboxmanage showmediuminfo disk $PWD/data/nfs/1.vdi
 
 ## 1. Prepare inventory file ##
 
@@ -63,8 +63,10 @@ If the target machines (either virtual or physical) are already setup and networ
 then we can directly play the Ansible playbooks:
 
     ansible-playbook -u root play-basic.yml
-    ansible-playbook -u root play-docker.yml
-    ansible-playbook -u root play-nfs.yml
+    
+    ansible-playbook -u root [-e data_partition=/dev/sdc1] play-docker.yml
+    
+    ansible-playbook -u root [-e data_partition=/dev/sdc1] play-nfs.yml
 
     ansible-playbook -u root [-e listen_to_primary_ipv4_address=1] play-docker-swarm.yml
     

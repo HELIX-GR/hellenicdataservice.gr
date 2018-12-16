@@ -1,7 +1,19 @@
 ---
 
+docker:
+  
+  registry: {}
+  #  'docker-registry.localdomain:8443':
+  #      certificate: trusted-certs/docker-registry.localdomain/server.crt
+
 jupyterhub:
   
   public_base_url: https://jupyter-s1.helix.internal/
-  
-  notebook_image: 'jupyterhub/singleuser:0.9'
+
+  registry: ~
+  #registry: 'docker-registry.localdomain:8443'
+
+  notebook_images:
+  - 'jupyterhub/singleuser:0.9'
+  - 'jupyter/datascience-notebook:77e10160c7ef'
+  default_notebook_image: 'jupyterhub/singleuser:0.9'

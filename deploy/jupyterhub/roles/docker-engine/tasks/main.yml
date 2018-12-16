@@ -55,8 +55,8 @@
   - name: Update kernel boot parameters to enable cgroups on memory
     lineinfile:
       dest: /etc/default/grub
-      regexp: '^GRUB_CMDLINE_LINUX_DEFAULT[ ]*='
-      line: 'GRUB_CMDLINE_LINUX_DEFAULT="quiet cgroup_enable=memory swapaccount=1"'  
+      regexp: '^GRUB_CMDLINE_LINUX[ ]*='
+      line: 'GRUB_CMDLINE_LINUX="quiet cgroup_enable=memory swapaccount=1"'  
       mode: 0600
       backup: no
     notify:
@@ -66,9 +66,6 @@
   # Restart deamons
   #
 
-  - name: Restart docker sockets
-    systemd:
-      name: docker.socket
-      daemon_reload: yes
-      state: restarted
+  - name: Restart docker service
+    systemd: name=docker.service daemon_reload=yes state=restarted
 

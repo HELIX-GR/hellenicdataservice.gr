@@ -6,7 +6,7 @@
 import json
 
 users = None
-with open("/srv/jupyterhub/users.json") as f: 
+with open("/etc/jupyterhub/users.json") as f: 
     users = json.load(f)
 
 #------------------------------------------------------------------------------
@@ -404,12 +404,13 @@ from dockerspawner import SwarmSpawner
 
 c.JupyterHub.spawner_class = SwarmSpawner
 
-c.DockerSpawner.image = 'jupyterhub/singleuser:0.9'
-#c.DockerSpawner.volumes = { 'jupyterhub-user-{username}': '/home/jovyan/work' }
-#c.DockerSpawner.volumes = { '/mnt/nfs-jupyterhub/notebooks/user-{username}': '/home/jovyan/work' }
+c.DockerSpawner.image = '{{jupyterhub.default_notebook_image}}'
 
 c.SwarmSpawner.network_name = 'jupyterhub_network'
 c.SwarmSpawner.extra_host_config = {'network_mode': 'jupyterhub_network'}
+
+# The default (home) URL is /tree (set to /lab only for notebooks based on datascience-notebook)
+c.SwarmSpawner.default_url = '/tree'
 
 # Note: Patch SwarmSpawner to prevent from adding a volume driver (non-applicable to bind mounts!)
 SwarmSpawner.mount_driver_config = property(lambda spawner: None)
@@ -418,7 +419,7 @@ SwarmSpawner.mount_driver_config = property(lambda spawner: None)
 SwarmSpawner.escaped_name = property(lambda spawner: spawner.user.name.replace('@','__at__').replace('.','_'))
 
 c.SwarmSpawner.volumes = {
-    '/mnt/nfs-jupyterhub/notebooks/users/{username}': {
+    '/mnt/nfs-jupyterhub/work/users/{username}': {
         'bind': '/home/jovyan/work', # the target of our bind (container-local directory)
         'mode': 'rw'},
 };
@@ -426,12 +427,12 @@ c.SwarmSpawner.volumes = {
 ## Path to SSL certificate file for the public facing interface of the proxy
 #  
 #  When setting this, you should also set ssl_key
-c.JupyterHub.ssl_cert = '/srv/jupyterhub/server.crt'
+c.JupyterHub.ssl_cert = '/etc/jupyterhub/server.crt'
 
 ## Path to SSL key file for the public facing interface of the proxy
 #  
 #  When setting this, you should also set ssl_cert
-c.JupyterHub.ssl_key = '/srv/jupyterhub/server.key'
+c.JupyterHub.ssl_key = '/etc/jupyterhub/server.key'
 
 ## Host to send statsd metrics to. An empty string (the default) disables sending
 #  metrics.
