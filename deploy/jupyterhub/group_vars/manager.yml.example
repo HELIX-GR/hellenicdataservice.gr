@@ -8,6 +8,9 @@ jupyterhub:
     github:
        client_id: abc1234
        client_secret: xyz1234 
+    google:
+       client_id: def1234
+       client_secret: ghk1234 
 
   users:
     "drmalex07": {username: "malex", admin: false}
