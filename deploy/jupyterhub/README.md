@@ -8,7 +8,7 @@ You must install `Ansible` on the control machine, preferably in a virtual Pytho
 
     virtualenv pyenv
     . pyenv/bin/activate
-    pip install ansible==2.3 netaddr
+    pip install ansible==2.5 netaddr
 
 ### 0.2 Provide SSH keys ###
 
