@@ -3,6 +3,7 @@
 
 # Configuration file for jupyterhub.
 
+import collections
 import json
 
 users = None
@@ -404,7 +405,28 @@ from dockerspawner import SwarmSpawner
 
 c.JupyterHub.spawner_class = SwarmSpawner
 
-c.DockerSpawner.image = '{{jupyterhub.default_notebook_image}}'
+#c.DockerSpawner.image = '{{jupyterhub.default_notebook_image}}'
+
+# Map a user's group to a docker image (the 1st match selects the image, so order matters)
+group_to_image = collections.OrderedDict([
+    ('data-science', '{{jupyterhub.datascience_notebook_image}}'),
+    ('standard', '{{jupyterhub.default_notebook_image}}'),
+    (None, '{{jupyterhub.default_notebook_image}}'),
+])
+
+# Note: Use JupyterHub API to assign users into groups. See: 
+#   https://jupyterhub.readthedocs.io/en/stable/reference/rest.html
+#   https://jupyterhub.readthedocs.io/en/stable/_static/rest-api/index.html#path--groups--name--users
+
+def spawner_get_image(spawner):
+    user = spawner.user
+    for group_name, image in group_to_image.items():
+        if any((g.name == group_name for g in user.groups)):
+            return image
+    return group_to_image.get(None)
+
+# Path SwarmSpawner to lookup image based on current user's groups
+SwarmSpawner.image = property(spawner_get_image) 
 
 c.SwarmSpawner.network_name = 'jupyterhub_network'
 c.SwarmSpawner.extra_host_config = {'network_mode': 'jupyterhub_network'}
