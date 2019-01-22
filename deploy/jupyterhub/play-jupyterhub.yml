@@ -20,6 +20,9 @@
      become: true
      become_user: jupyter
 
+   - name: Add jupyter into docker group
+     user: name=jupyter groups=docker append=yes
+
    - name: Copy server key for JupyterHub
      copy: src=certs/server.key dest=/etc/jupyterhub/server.key owner=jupyter group=admin mode=0600
 
