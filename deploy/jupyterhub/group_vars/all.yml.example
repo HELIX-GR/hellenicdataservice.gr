@@ -16,4 +16,4 @@ jupyterhub:
   notebook_images:
   - 'jupyterhub/singleuser:0.9'
   - 'jupyter/datascience-notebook:77e10160c7ef'
-  default_notebook_image: 'jupyterhub/singleuser:0.9'
+  default_notebook_image: 'jupyter/datascience-notebook:77e10160c7ef'
