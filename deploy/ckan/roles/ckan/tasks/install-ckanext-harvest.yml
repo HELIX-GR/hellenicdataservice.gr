@@ -1,0 +1,13 @@
+---
+
+   - name: Install ckanext-harvest into environment
+     pip:
+       name: 'git+https://github.com/ckan/ckanext-harvest.git@{{ckanext.harvest.version}}#egg=ckanext-harvest'
+       virtualenv: /usr/lib/ckan/default
+       editable: yes
+
+   - name: Install ckanext-harvest requirements
+     pip:
+       requirements: /usr/lib/ckan/default/src/ckanext-harvest/pip-requirements.txt
+       virtualenv: /usr/lib/ckan/default
+

@@ -1,0 +1,32 @@
+---
+
+   - include: install-apt-packages.yml
+   
+   - include: install-ckan.yml
+   
+   - include: install-datapusher.yml
+
+   - include: setup-solr.yml
+   
+   - service: name=jetty8.service state=restarted
+     become: yes
+   
+   - include: install-ckanext-harvest.yml
+   
+   - include: install-ckanext-spatial.yml
+   
+   - include: install-ckanext-oauth2.yml
+   
+   - include: initialize-database.yml
+   
+   - include: create-users.yml
+   
+   - include: setup-apache-vhosts.yml 
+   
+   - include: configure-rsyslog.yml 
+   
+   - service: name=apache2.service state=restarted
+     become: yes
+   
+   - service: name=rsyslog.service state=restarted
+     become: yes

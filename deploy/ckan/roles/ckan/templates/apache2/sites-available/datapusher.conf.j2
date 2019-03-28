@@ -1,0 +1,25 @@
+# vim: set ft=apache:
+<VirtualHost 127.0.0.1:8800>
+
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html
+
+    <Directory "/usr/lib/ckan/datapusher/bin/">
+        <Files "datapusher.wsgi">
+            Require all granted
+        </Files>
+    </Directory>
+
+    WSGIPassAuthorization On
+    WSGIDaemonProcess "datapusher" user="ubuntu" group="www-data" display-name="datapusher" processes=1 threads=8
+    WSGIProcessGroup "datapusher"
+    
+    WSGIScriptAlias "/" "/usr/lib/ckan/datapusher/bin/datapusher.wsgi"
+    
+    ErrorLogFormat "datapusher: %M"
+    ErrorLog syslog
+    #ErrorLog "${APACHE_LOG_DIR}/error.datapusher.log"
+    
+    CustomLog "${APACHE_LOG_DIR}/access.datapusher.log" combined
+</VirtualHost>
+

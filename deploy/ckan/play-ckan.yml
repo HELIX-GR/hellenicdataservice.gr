@@ -1,0 +1,124 @@
+---
+ 
+ - hosts: all
+   
+   tasks:
+     
+   - set_fact:
+       secrets_dir: '{{"files/secrets" | realpath}}'
+       password_spec: 'chars=ascii_letters,digits length=9'
+      
+ #
+ # Setup database 
+ #
+
+ - hosts: database
+
+   tasks:
+  
+   - shell: psql -t -A -F ',' -c '\du'| awk -F ',' -- '{print $1}' 
+     register: psql_du_result
+     become: yes
+     become_user: postgres
+
+   - name: Create database users for CKAN
+     command: psql -c 'CREATE USER "{{item}}" WITH LOGIN'
+     with_items: [ 'ckan', 'ckan-data-reader' ]
+     when: 'not (item in psql_du_result.stdout_lines)'
+     become: yes
+     become_user: postgres
+
+   - name: Set passwords for database users
+     command: psql -c 'ALTER ROLE "{{item}}" PASSWORD $${{lookup("password", password_arg)}}$$' 
+     with_items: [ 'ckan', 'ckan-data-reader' ]
+     become: yes
+     become_user: postgres
+     vars:
+       password_arg: '{{secrets_dir ~ "/database/users/" ~ item ~ " " ~ password_spec}}'
+
+   - name: List existing databases
+     shell: psql -A -F ',' -R '$' -t -c '\l'| awk -F ',' -v 'RS=$' -- '{print $1}'
+     register: psql_l_result
+     become: yes
+     become_user: postgres
+
+   - name: Create databases
+     command: psql -c 'CREATE DATABASE "{{db_name}}" OWNER "{{db_owner}}" TABLESPACE {{db_tablespace}}'
+     with_items:
+     - { name: 'ckan', owner: 'ckan' }
+     - { name: 'ckan-data', owner: 'ckan' }
+     - { name: 'ckan-data-jobs', owner: 'ckan' }
+     when: 'not (db_name in psql_l_result.stdout_lines)'
+     vars:
+       db_name: "{{item.name}}"
+       db_owner: "{{item.owner}}"
+       db_tablespace: "DEFAULT" 
+     become: yes
+     become_user: postgres
+
+   - name: Load PostGis extension into databases
+     command: psql -c 'CREATE EXTENSION IF NOT EXISTS postgis' '{{item}}'
+     with_items: [ 'ckan', 'ckan-data' ] 
+     become: yes
+     become_user: postgres
+
+   - name: Fix PostGis permissions for owner
+     command: psql -c 'ALTER TABLE {{item.1}} OWNER TO "ckan"' '{{item.0}}'
+     with_nested:
+     - [ 'ckan', 'ckan-data' ]
+     - [ 'spatial_ref_sys', 'geometry_columns', 'geography_columns', 'raster_columns', 'raster_overviews' ]
+     become: yes
+     become_user: postgres
+
+
+ #
+ # Setup web application
+ #
+
+ - hosts: ckan
+
+   pre_tasks:
+
+   roles:
+   - role: ckan
+     vars:
+       application_id: '{{ckan.application_id}}'
+       server_name: '{{ckan.server_name}}'
+       site_url: 'https://{{ckan.server_name}}'
+       db_host: '{{groups.database| map("extract", hostvars, "fqdn")| first}}'
+       oauth2:
+         authorization_uri: '{{ckan.oauth2.authorization_uri}}'
+         token_uri: '{{ckan.oauth2.token_uri}}'
+         userinfo_uri: '{{ckan.oauth2.userinfo_uri}}'
+         scope: '{{ckan.oauth2.scope}}'
+         client_id: '{{ckan.oauth2.client_id}}'
+         client_secret: '{{ckan.oauth2.client_secret}}'
+
+   tasks:
+
+ #
+ # Fix permissions for datastore
+ #
+ 
+ - hosts: database
+
+   tasks:
+
+   - copy: 
+       src: 'data/{{groups.ckan| first}}/tmp/set-datastore-permissions.sql'
+       dest: '/tmp/set-datastore-permissions.sql'
+
+   - shell: >
+       psql -t -A -F ',' -c '\d' ckan-data| awk -F ',' '{print $2}'| grep -c -e _table_metadata || /bin/true
+     register: datastore_initialized_result 
+     become: yes
+     become_user: postgres
+
+   - set_fact:
+       datastore_initialized: '{{datastore_initialized_result.stdout| bool}}'
+   
+   - shell: psql --set ON_ERROR_STOP=1 -f /tmp/set-datastore-permissions.sql
+     when: not datastore_initialized  
+     become: yes
+     become_user: postgres
+ 

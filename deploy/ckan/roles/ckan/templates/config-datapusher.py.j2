@@ -1,0 +1,24 @@
+# vim: set ft=python:
+
+import uuid
+
+DEBUG = False
+TESTING = False
+SECRET_KEY = str(uuid.uuid4())
+USERNAME =  str(uuid.uuid4())
+PASSWORD =  str(uuid.uuid4())
+
+NAME = 'datapusher'
+
+MAX_CONTENT_LENGTH = 256 * 1024 * 1024; # 256Mb 
+
+SQLALCHEMY_DATABASE_URI = '{{sqla_url}}'
+
+#HOST = '127.0.0.1'
+#PORT = 8800
+
+#FROM_EMAIL = 'server-error@example.com'
+#ADMINS = ['yourname@example.com']  # where to send emails
+
+LOG_FILE = '/var/log/ckan/datapusher/datapusher.log'
+STDERR = True
