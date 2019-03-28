@@ -1,0 +1,37 @@
+---
+
+ckan:
+  version: 'ckan-2.8.2'
+
+datapusher:
+  version: '0.0.14'
+
+ckanext:
+  harvest:
+    version: 'v1.1.4'
+  
+  spatial:
+    version: '2acf66b110ba534750cab754a50566505ba88d83'
+
+secrets_dir: 'secrets'
+password_spec: 'chars=ascii_letters,digits length=9'
+
+application_id:
+
+db_host: localhost
+
+server_name: ckan.example.com
+
+site_url: https://ckan.example.com
+
+oauth2:
+  authorization_uri: https://accounts.google.com/o/oauth2/auth
+  token_uri: https://accounts.google.com/o/oauth2/token
+  userinfo_uri: https://www.googleapis.com/oauth2/v1/userinfo 
+  scope: >
+    https://www.googleapis.com/auth/userinfo.email 
+    https://www.googleapis.com/auth/userinfo.profile 
+    https://www.googleapis.com/auth/plus.me
+  client_id:
+  client_secret:
+

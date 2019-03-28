@@ -1,0 +1,242 @@
+# vim: set ft=dosini:
+
+[DEFAULT]
+
+debug = false
+
+[server:main]
+use = egg:Paste#http
+host = 0.0.0.0
+port = 5000
+
+[app:main]
+use = egg:ckan
+full_stack = true
+cache_dir = /tmp/%(ckan.site_id)s/
+beaker.session.key = ckan
+
+beaker.session.secret = {{session_secret}}
+
+app_instance_uuid = {{application_id}}
+
+# repoze.who config
+who.config_file = %(here)s/who.ini
+who.log_level = warning
+who.log_file = %(cache_dir)s/who_log.ini
+# Session timeout (user logged out after period of inactivity, in seconds).
+# Inactive by default, so the session doesn't expire.
+# who.timeout = 86400
+
+sqlalchemy.url = {{sqla_url}}
+ckan.datastore.write_url = {{data_writer_url}} 
+ckan.datastore.read_url = {{data_reader_url}}
+
+# PostgreSQL' full-text search parameters
+ckan.datastore.default_fts_lang = english
+ckan.datastore.default_fts_index_method = gist
+
+## Site Settings
+
+ckan.site_url = {{site_url}}
+#ckan.use_pylons_response_cleanup_middleware = true
+
+## Authorization Settings
+
+ckan.auth.anon_create_dataset = false
+ckan.auth.create_unowned_dataset = false
+ckan.auth.create_dataset_if_not_in_organization = false
+ckan.auth.user_create_groups = false
+ckan.auth.user_create_organizations = false
+ckan.auth.user_delete_groups = false
+ckan.auth.user_delete_organizations = false
+ckan.auth.create_user_via_api = false
+ckan.auth.create_user_via_web = true
+ckan.auth.roles_that_cascade_to_sub_groups = admin
+
+## Search Settings
+
+ckan.site_id = default
+solr_url = http://127.0.0.1:8983/solr
+
+ckan.datasets_per_page = 10
+
+#ckan.simple_search = 1
+
+# Controls whether the default search page (``/dataset``) should include private datasets visible to the current user or only public datasets visible to everyone.
+ckan.search.default_include_private = false
+
+## Redis Settings
+
+# URL to your Redis instance, including the database to be used.
+#ckan.redis.url = redis://localhost:6379/0
+
+## CORS Settings
+
+# If cors.origin_allow_all is true, all origins are allowed.
+# If false, the cors.origin_whitelist is used.
+# ckan.cors.origin_allow_all = true
+# cors.origin_whitelist is a space separated list of allowed domains.
+# ckan.cors.origin_whitelist = http://example1.com http://example2.com
+
+## Plugins Settings
+
+ckan.plugins = 
+    datastore datapusher
+    resource_proxy
+    harvest ckan_harvester
+    spatial_metadata spatial_query
+    stats text_view image_view 
+    recline_view recline_grid_view
+    oauth2
+
+# Define which views should be created by default
+# (plugins must be loaded in ckan.plugins)
+ckan.views.default_views = image_view text_view recline_view
+
+# Customize which text formats the text_view plugin will show
+#ckan.preview.json_formats = json
+#ckan.preview.xml_formats = xml rdf rdf+xml owl+xml atom rss
+#ckan.preview.text_formats = text plain text/plain
+
+# Customize which image formats the image_view plugin will show
+#ckan.preview.image_formats = png jpeg jpg gif
+
+## Front-End Settings
+
+# Uncomment following configuration to enable using of Bootstrap 2
+#ckan.base_public_folder = public-bs2
+#ckan.base_templates_folder = templates-bs2
+
+ckan.site_title = Data Catalog
+ckan.site_logo = /base/images/ckan-logo.png
+ckan.site_description =
+ckan.favicon = /images/icons/favicon.ico
+ckan.gravatar_default = identicon
+ckan.preview.direct = png jpg jpeg gif
+ckan.preview.loadable = html htm rdf+xml owl+xml xml n3 n-triples turtle plain atom csv tsv rss txt json
+ckan.display_timezone = server
+
+# package_hide_extras = for_search_index_only
+#package_edit_return_url = http://another.frontend/dataset/<NAME>
+#package_new_return_url = http://another.frontend/dataset/<NAME>
+#ckan.recaptcha.publickey =
+#ckan.recaptcha.privatekey =
+# ckan.template_footer_end =
+
+licenses_group_url = file:///%(here)s/licenses.json
+
+## Internationalisation
+
+ckan.locale_default = en
+ckan.locale_order = en el
+ckan.locales_offered = en el
+ckan.locales_filtered_out = en_GB
+
+## Feeds Settings
+
+ckan.feeds.authority_name =
+ckan.feeds.date =
+ckan.feeds.author_name =
+ckan.feeds.author_link =
+
+## Storage Settings
+
+ckan.storage_path = /var/lib/ckan/default/files
+ckan.max_resource_size = 120
+ckan.max_image_size = 8
+
+## Datapusher settings
+
+# Make sure you have set up the DataStore
+
+ckan.datapusher.formats = csv xls xlsx tsv application/csv application/vnd.ms-excel application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+ckan.datapusher.url = http://127.0.0.1:8800/
+ckan.datapusher.assume_task_stale_after = 3600
+
+## Resource Proxy settings
+
+# Preview size limit, default: 1MB
+ckan.resource_proxy.max_file_size = 1048576
+# Size of chunks to read/write.
+ckan.resource_proxy.chunk_size = 4096
+
+## Activity Streams Settings
+
+ckan.activity_streams_enabled = true
+ckan.activity_list_limit = 31
+#ckan.activity_streams_email_notifications = true
+#ckan.email_notifications_since = 2 days
+ckan.hide_activity_from_users = %(ckan.site_id)s
+
+## Email settings
+
+#email_to = errors@example.com
+#error_email_from = ckan-errors@example.com
+#smtp.server = localhost
+#smtp.starttls = False
+#smtp.user = username@example.com
+#smtp.password = your_password
+#smtp.mail_from =
+
+## OAuth2 settings
+
+ckan.oauth2.authorization_endpoint = {{oauth2.authorization_uri}}
+ckan.oauth2.token_endpoint = {{oauth2.token_uri}}
+ckan.oauth2.profile_api_url = {{oauth2.userinfo_uri}}
+ckan.oauth2.client_id = {{oauth2.client_id}} 
+ckan.oauth2.client_secret = {{oauth2.client_secret}}
+ckan.oauth2.scope = {{oauth2.scope}}
+ckan.oauth2.profile_api_user_field = email
+ckan.oauth2.profile_api_fullname_field = name
+ckan.oauth2.profile_api_mail_field = email
+ckan.oauth2.authorization_header = Authorization
+
+## Spatial settings 
+
+ckan.spatial.srid = 4326
+ckanext.spatial.common_map.type = custom
+ckanext.spatial.common_map.custom.url = http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png
+ckanext.spatial.common_map.attribution = &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://cartodb.com/attributions">CartoDB</a> 
+#ckanext.spatial.search_backend = solr-spatial
+
+## Logging configuration
+
+[loggers]
+keys = root, ckan, ckanext
+
+[handlers]
+keys = console, logfile
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = WARNING
+handlers = console, logfile
+
+[logger_ckan]
+level = INFO
+handlers = console, logfile
+qualname = ckan
+propagate = 0
+
+[logger_ckanext]
+level = INFO
+handlers = console, logfile
+qualname = ckanext
+propagate = 0
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[handler_logfile]
+class = logging.handlers.RotatingFileHandler
+args = ('/var/log/ckan/default/ckan.log', 'a', 131072, 14)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(asctime)s %(levelname)-5.5s [%(name)s] %(message)s

@@ -1,0 +1,65 @@
+---
+
+ - hosts: all
+
+   tasks:
+   
+   - debug: var=play_hosts
+   - debug: var=groups.all
+   
+   - assert:
+      that: 
+      - hostname is defined
+      - fqdn is defined
+      - ipv4_address is defined
+
+   - apt: update_cache=yes
+
+   - apt: pkg={{item}} state=latest
+     with_items: [ 'vim', 'tree', 'jq', 'curl', 'screen', 'htop', 'bash-completion', 'unzip' ]
+
+   - hostname: name={{hostname}}
+
+   - name: Update /etc/hosts with local hostname
+     lineinfile:
+       dest: /etc/hosts
+       regexp: '^127\.0\.1\.1'
+       line: '127.0.1.1 {{ansible_hostname}} {{hostname}}'
+       state: present
+
+   - name: Update /etc/hosts with names from inventory file
+     lineinfile:
+       dest: /etc/hosts
+       line: '{{ipv4_address}} {{fqdn}} {{inventory_hostname}}'
+       state: present
+
+   - group: name=wheel state=present
+   
+   - name: Add rules for sudoers (wheel)
+     copy:
+       dest: /etc/sudoers.d/wheel
+       content: '%wheel ALL=(ALL) NOPASSWD:ALL'
+   
+   - user:
+       name: ubuntu
+       groups: ['wheel']
+       shell: /bin/bash
+   
+   - file: path=~/bin state=directory
+   
+   - file: path=~ubuntu/bin state=directory owner=ubuntu group=ubuntu
+
+   - copy: src=files/{{item.key}} dest=~/{{item.value}} mode=0644
+     with_dict: { 'profile': '.profile', 'bashrc': '.bashrc', 'vimrc': '.vimrc' }
+    
+   - copy: src=files/{{item.key}} dest=~ubuntu/{{item.value}} mode=0644 owner=ubuntu group=ubuntu
+     with_dict: { 'profile': '.profile', 'bashrc': '.bashrc', 'vimrc': '.vimrc' }
+   
+   - authorized_key:
+       user: '{{u}}'
+       state: present
+       key: '{{lookup("file", "keys/id_rsa.pub")}}'
+     with_items: ['root', 'ubuntu']
+     vars:
+       u: '{{item}}'
+

@@ -1,0 +1,54 @@
+---
+
+- hosts: all
+
+  vars:
+ 
+  tasks:
+
+  #
+  # Install PostgreSQL 10.x
+  #
+
+  - apt: pkg=ca-certificates state=latest
+    become: yes
+
+  - apt_key:
+      url: https://www.postgresql.org/media/keys/ACCC4CF8.asc 
+      state: present
+    become: yes
+
+  - apt_repository:
+      repo: 'deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main'
+      state: present
+    become: yes
+
+  - apt: update_cache=yes
+    become: yes
+
+  - apt: pkg={{item}} state=latest
+    with_items: [ 'postgresql-10', 'postgresql-10-postgis-2.4' ]
+    become: yes
+
+  #
+  # Configure database server
+  #
+    
+  - name: Configure listen addresses
+    lineinfile:
+      path: /etc/postgresql/10/main/postgresql.conf
+      regexp: "^[#]?listen_addresses\\s*="
+      line: "listen_addresses = 'localhost, {{ipv4_address}}'"
+    become: yes
+    become_user: postgres
+ 
+  - name: Allow connections from local network
+    lineinfile:
+      path: /etc/postgresql/10/main/pg_hba.conf
+      line: "host all all {{network}} md5"
+    become: yes
+    become_user: postgres
+  
+  - service: name=postgresql.service state=restarted
+    become: yes
+  

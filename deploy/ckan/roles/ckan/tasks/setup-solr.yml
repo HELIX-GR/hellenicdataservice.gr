@@ -1,0 +1,20 @@
+---
+
+ - lineinfile:
+     path: /etc/default/jetty8
+     regexp: "^[#]?JETTY_HOST\\s*="
+     line: "JETTY_HOST=127.0.0.1"
+   become: yes
+
+ - lineinfile:
+     path: /etc/default/jetty8
+     regexp: "^[#]?JETTY_PORT\\s*="
+     line: "JETTY_PORT=8983"
+   become: yes
+
+ - shell: >
+     test -L /etc/solr/conf/schema.xml || mv /etc/solr/conf/schema.xml /etc/solr/conf/schema.xml.bak
+   become: yes
+ 
+ - file: src=/etc/ckan/default/solr/schema.xml dest=/etc/solr/conf/schema.xml state=link force=yes 
+   become: yes

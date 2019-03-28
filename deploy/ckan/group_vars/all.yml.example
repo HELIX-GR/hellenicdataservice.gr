@@ -1,0 +1,7 @@
+# vim: set ft=yaml:
+
+---
+
+ckan:
+  application_id: '738f5634-bda8-4fe6-8bc0-0253071ea2e5'
+  server_name: 'catalog.helix.internal'
