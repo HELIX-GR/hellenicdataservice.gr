@@ -1,0 +1,15 @@
+---
+
+   - apt: update_cache=yes
+     become: yes
+
+   - apt: pkg={{item}} state=latest
+     with_flattened: 
+     - [ 'vim', 'tree', 'jq', 'curl', 'screen', 'htop', 'bash-completion', 'unzip', 'ca-certificates', 'git-core' ]
+     - [ 'python-dev', 'python-pip', 'python-virtualenv', 'git-core', 'gettext' ] 
+     - [ 'openjdk-8-jdk-headless', 'solr-jetty', 'redis-server' ]
+     - [ 'libpq-dev', 'postgresql-client' ]
+     - [ 'build-essential', 'libxslt1-dev', 'libxml2-dev', 'zlib1g-dev', 'libffi-dev' ]
+     - [ 'apache2', 'libapache2-mod-wsgi' ]
+     become: yes
+

@@ -1,0 +1,28 @@
+# vi: set ft=yaml:
+
+---
+
+all:
+  vars:
+    network: '10.17.4.0/24'
+
+  children:
+
+    'database':
+      hosts:
+        'postgres-n1':
+          ansible_host: postgres-n1.helix.internal
+          ansible_port: 22
+          fqdn: postgres-n1.helix.internal
+          hostname: postgres-n1-helix
+          ipv4_address: '10.17.4.125'
+    
+    'ckan':
+      hosts:
+        'ckan':
+          ansible_host: ckan.helix.internal
+          ansible_port: 22
+          fqdn: ckan.helix.internal
+          hostname: ckan-helix
+          ipv4_address: '10.17.4.121'
+

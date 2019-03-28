@@ -1,0 +1,19 @@
+---
+   
+   - name: Create database schema for ckan
+     shell: . /usr/lib/ckan/default/bin/activate && paster db init -c /etc/ckan/default/config.ini
+     args:
+       chdir: /usr/lib/ckan/default/src/ckan
+   
+   - name: Create database tables for ckanext-harvest
+     shell: . /usr/lib/ckan/default/bin/activate && paster --plugin=ckanext-harvest harvester initdb --config /etc/ckan/default/config.ini
+     args:
+       chdir: /usr/lib/ckan/default/src/ckan
+   
+   - name: Generate set-permissions SQL script for ckan datastore (must be run by `postgres` user)
+     shell: >
+       . /usr/lib/ckan/default/bin/activate && paster datastore set-permissions -c /etc/ckan/default/config.ini > /tmp/set-datastore-permissions.sql
+     args:
+       chdir: /usr/lib/ckan/default/src/ckan
+     
+   - fetch: src=/tmp/set-datastore-permissions.sql dest=data

@@ -1,0 +1,28 @@
+# vim: set ft=apache:
+<VirtualHost *:8000>
+    ServerName {{server_name}}
+
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html
+
+    <Directory "/usr/lib/ckan/default/bin/">
+        <Files "ckan.wsgi">
+            Require all granted
+        </Files>
+    </Directory>
+
+    # Serve in daemon-process mode
+    WSGIPassAuthorization On
+    WSGIDaemonProcess "ckan_default" user="ubuntu" group="www-data" display-name="ckan/default" processes=4 threads=8
+    WSGIProcessGroup "ckan_default"
+
+    WSGIScriptAlias "/" "/usr/lib/ckan/default/bin/ckan.wsgi"
+    
+    ErrorLogFormat "ckan-default: %M"
+    ErrorLog syslog
+    #ErrorLog "${APACHE_LOG_DIR}/error.ckan-default.log"
+    LogLevel info
+    
+    LogFormat "%{Host}i:%p %h %l %u %t \"%r\" %>s %O Ref=\"%{Referer}i\" UA=\"%{User-Agent}i\" Forwarded-For=\"%{X-Forwarded-For}i\"" vhost_combined_1
+    CustomLog "${APACHE_LOG_DIR}/access.ckan-default.log" vhost_combined_1
+</VirtualHost>

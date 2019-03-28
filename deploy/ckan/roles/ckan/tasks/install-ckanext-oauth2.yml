@@ -1,0 +1,13 @@
+---
+
+   - name: Install ckanext-oauth2 into environment
+     pip:
+       name: 'git+https://github.com/HELIX-GR/ckanext-oauth2.git#egg=ckanext-oauth2'
+       virtualenv: /usr/lib/ckan/default
+       editable: yes
+
+   - name: Install ckanext-oauth2 requirements
+     pip:
+       requirements: /usr/lib/ckan/default/src/ckanext-oauth2/requirements/install.pip
+       virtualenv: /usr/lib/ckan/default
+

@@ -1,0 +1,21 @@
+---
+
+ - copy: src=ckan.wsgi dest=/usr/lib/ckan/default/bin/ckan.wsgi mode=0775
+ 
+ - copy: src=datapusher.wsgi dest=/usr/lib/ckan/datapusher/bin/datapusher.wsgi mode=0775
+
+ - copy: src=apache2/ports.conf dest=/etc/apache2/ports.conf mode=0644
+   become: yes
+ 
+ - apache2_module: state=present name={{item}}
+   with_items: [ 'wsgi', 'proxy', 'proxy_http', 'proxy_balancer', 'env' ]
+   become: yes
+
+ - template: src=apache2/sites-available/{{item}}.j2 dest=/etc/apache2/sites-available/{{item}}
+   with_items: [ 'ckan-default.conf', 'datapusher.conf' ]
+   become: yes
+
+ - file: src=/etc/apache2/sites-available/{{item}} dest=/etc/apache2/sites-enabled/{{item}} state=link
+   with_items: [ 'ckan-default.conf', 'datapusher.conf' ]
+   become: yes
+
