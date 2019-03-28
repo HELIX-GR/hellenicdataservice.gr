@@ -8,7 +8,7 @@
    become: yes
  
  - apache2_module: state=present name={{item}}
-   with_items: [ 'wsgi', 'proxy', 'proxy_http', 'proxy_balancer', 'env' ]
+   with_items: [ 'wsgi', 'proxy', 'proxy_http', 'proxy_balancer', 'env', 'ssl', 'headers', 'socache_shmcb' ]
    become: yes
 
  - template: src=apache2/sites-available/{{item}}.j2 dest=/etc/apache2/sites-available/{{item}}
