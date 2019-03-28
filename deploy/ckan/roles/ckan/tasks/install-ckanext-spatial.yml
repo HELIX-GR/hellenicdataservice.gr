@@ -1,0 +1,13 @@
+---
+
+   - name: Install ckanext-spatial into environment
+     pip:
+       name: 'git+https://github.com/ckan/ckanext-spatial.git@{{ckanext.spatial.version}}#egg=ckanext-spatial'
+       virtualenv: /usr/lib/ckan/default
+       editable: yes
+
+   - name: Install ckanext-spatial requirements
+     pip:
+       requirements: /usr/lib/ckan/default/src/ckanext-spatial/pip-requirements.txt
+       virtualenv: /usr/lib/ckan/default
+

@@ -1,0 +1,7 @@
+/hosts.yml
+
+/.vagrant
+/.vagrant-data
+
+/*.log
+/*.retry

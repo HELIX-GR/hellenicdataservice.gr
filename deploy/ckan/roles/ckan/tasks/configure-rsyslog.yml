@@ -1,0 +1,4 @@
+---
+
+ - copy: src=rsyslog.d/local7.conf dest=/etc/rsyslog.d/51-local7.conf owner=root mode=0644
+   become: yes

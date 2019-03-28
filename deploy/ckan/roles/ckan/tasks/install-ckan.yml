@@ -1,0 +1,65 @@
+---
+   - assert:
+      that: 
+      - application_id| default("", 1)| length
+      - secrets_dir is defined
+      - password_spec is defined
+      - server_name is defined
+
+   - file: path=/usr/lib/ckan state=directory owner=ubuntu group=ubuntu mode=0775
+     become: yes
+   
+   - name: Create virtual Python environment for CKAN 
+     shell: virtualenv --no-site-packages /usr/lib/ckan/default
+     args: { creates: /usr/lib/ckan/default }
+
+   - file: path=/var/log/ckan state=directory owner=ubuntu group=ubuntu mode=0775
+     become: yes
+   
+   - file: path=/var/log/ckan/default state=directory mode=0775
+
+   - file: path=/var/lib/ckan state=directory owner=ubuntu group=ubuntu mode=0775
+     become: yes
+
+   - file: path=/var/lib/ckan/default state=directory mode=0775
+
+   - file: path=/var/lib/ckan/default/files state=directory mode=0775 owner=ubuntu group=www-data
+     become: yes
+
+   - file: path=/etc/ckan state=directory owner=ubuntu group=ubuntu mode=0775
+     become: yes
+
+   - file: path=/etc/ckan/default state=directory mode=0775
+   
+   - copy: src=env.sh dest=~/env.sh mode=0775 owner=ubuntu group=ubuntu
+
+   - name: Install recommended version for setuptools
+     pip: 
+       name: 'setuptools==36.1' 
+       virtualenv: /usr/lib/ckan/default
+
+   - name: Install ckan into environment
+     pip:
+       name: 'git+https://github.com/ckan/ckan.git@{{ckan.version}}#egg=ckan'
+       virtualenv: /usr/lib/ckan/default
+       editable: yes
+
+   - name: Install ckan requirements
+     pip:
+       requirements: /usr/lib/ckan/default/src/ckan/requirements.txt
+       virtualenv: /usr/lib/ckan/default
+
+   - copy: src=licenses.json dest=/etc/ckan/default/licenses.json owner=ubuntu group=ubuntu
+
+   - copy: src=solr dest=/etc/ckan/default owner=ubuntu group=ubuntu
+
+   - file: src=/usr/lib/ckan/default/src/ckan/who.ini dest=/etc/ckan/default/who.ini state=link
+       
+   - name: Generate configuration 
+     template: src=config.ini.j2 dest=/etc/ckan/default/config.ini owner=ubuntu group=ubuntu
+     vars:
+       session_secret: '{{lookup("password", secrets_dir ~ "/ckan/session-secret" ~ " " ~ "chars=ascii_letters,digits")}}' 
+       sqla_url: 'postgresql://ckan:{{lookup("password", secrets_dir ~ "/database/users/ckan")}}@{{db_host}}/ckan' 
+       data_reader_url: 'postgresql://ckan-data-reader:{{lookup("password", secrets_dir ~ "/database/users/ckan-data-reader")}}@{{db_host}}/ckan-data'
+       data_writer_url: 'postgresql://ckan:{{lookup("password", secrets_dir ~ "/database/users/ckan")}}@{{db_host}}/ckan-data'
+   

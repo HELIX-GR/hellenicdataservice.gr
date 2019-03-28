@@ -1,0 +1,30 @@
+---
+
+   - name: Create virtual Python environment for CKAN datapusher 
+     shell: virtualenv --no-site-packages /usr/lib/ckan/datapusher
+     args: { creates: /usr/lib/ckan/datapusher }
+
+   - name: Install CKAN datapusher
+     pip:
+       name: 'git+https://github.com/ckan/datapusher.git@{{datapusher.version}}#egg=datapusher'
+       virtualenv: /usr/lib/ckan/datapusher
+       editable: yes
+   
+   - name: Install requirements for CKAN datapusher
+     pip:
+       requirements: /usr/lib/ckan/datapusher/src/datapusher/requirements.txt 
+       virtualenv: /usr/lib/ckan/datapusher
+   
+   - name: Install database driver for CKAN datapusher
+     pip: 
+       name: psycopg2
+       virtualenv: /usr/lib/ckan/datapusher
+
+   - file: path=/etc/ckan/datapusher state=directory mode=0775
+
+   - name: Generate configuration for datapusher
+     template: src=config-datapusher.py.j2 dest=/etc/ckan/datapusher/config.py
+     vars:
+       sqla_url: 'postgresql://ckan:{{lookup("password", secrets_dir ~ "/database/users/ckan")}}@{{db_host}}/ckan-data-jobs'
+
+   - file: path=/var/log/ckan/datapusher state=directory mode=0775    
