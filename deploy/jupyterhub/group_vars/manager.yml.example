@@ -1,3 +1,5 @@
+# vim: set ft=yaml:
+
 ---
 
 jupyterhub:
@@ -5,12 +7,25 @@ jupyterhub:
   version: '0.9'
 
   oauth:
+    authenticator: 'github'
+
     github:
-       client_id: abc1234
-       client_secret: xyz1234 
+      client_id: 'abc1234'
+      client_secret: 'xyz1234'
+    
     google:
-       client_id: def1234
-       client_secret: ghk1234 
+      client_id: 'def1234'
+      client_secret: 'ghk1234'
+
+    generic:
+      service_name: 'keycloak.internal'
+      authorize_url: 'https://keycloak.internal:8443/auth/realms/demo/protocol/openid-connect/auth'
+      token_url: 'https://keycloak.internal:8443/auth/realms/demo/protocol/openid-connect/token'
+      userinfo_url: 'https://keycloak.internal:8443/auth/realms/demo/protocol/openid-connect/userinfo'
+      scope: ['openid', 'profile', 'person', 'email'] 
+      username_key: 'preferred_username'
+      client_id: 'jupyter-s1.helix.internal'
+      client_secret: 'xyRz4erR7344fhrf1dYwhsVhejf35utjef1f'
 
   users:
     "drmalex07": {username: "malex", admin: false}
