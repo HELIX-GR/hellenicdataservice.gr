@@ -72,3 +72,7 @@ then we can directly play the Ansible playbooks:
     
     ansible-playbook -u root play-jupyterhub.yml
 
+If we want to only re-play the configuration part for JupyterHub:
+
+    ansible-playbook -u root --step --tags configuration play-jupyterhub.yml
+

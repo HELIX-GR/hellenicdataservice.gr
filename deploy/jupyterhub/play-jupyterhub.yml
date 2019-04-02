@@ -34,12 +34,15 @@
    
    - name: Copy service descriptor in docker-compose.yml
      copy: src=files/jupyterhub/docker-compose.yml dest=/usr/local/jupyterhub/docker-compose.yml owner=jupyter group=admin
+     tags: ['configuration']
 
    - name: Copy Dockerfile
      template: src=templates/jupyterhub/Dockerfile.j2 dest=/usr/local/jupyterhub/Dockerfile owner=jupyter group=admin
+     tags: ['configuration']
 
    - name: Generate configuration for JupyterHub 
      template: src=templates/jupyterhub/config.py.j2 dest=/usr/local/jupyterhub/jupyterhub_config.py owner=jupyter group=admin
+     tags: ['configuration']
    
    - name: Copy README
      copy: src=files/jupyterhub/README-compose.md dest=/usr/local/jupyterhub/README.md owner=jupyter group=admin

@@ -1,0 +1,10 @@
+---
+
+ - hosts: manager
+
+   tasks:
+
+   - debug: var=jupyterhub
+
+   - name: Generate configuration for JupyterHub 
+     template: src=templates/jupyterhub/config.py.j2 dest=/usr/local/jupyterhub/jupyterhub_config.py owner=jupyter group=admin
