@@ -8,12 +8,17 @@ docker:
   #  'docker-registry.localdomain:8443':
   #      certificate: trusted-certs/docker-registry.localdomain/server.crt
 
+nfs:
+  jupyterhub_data_dir: '/mnt/nfs-jupyterhub'
+  backup_dir: '/mnt/nfs-backups'
+
 jupyterhub:
   
   public_base_url: https://jupyter-s1.helix.internal/
 
   registry: ~
   #registry: 'docker-registry.localdomain:8443'
+
 
   notebook_images:
   - 'jupyterhub/singleuser:0.9'

@@ -6,6 +6,10 @@ jupyterhub:
 
   version: '0.9'
 
+  # per-container memory limit
+  memory_limit: '2G'
+  
+  # configuration for OAuth2-based authenticators
   oauth:
     authenticator: 'github'
 

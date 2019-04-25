@@ -51,11 +51,13 @@
      with_items: [ 'nfs-common' ]
 
    - file: path={{item}} state=directory
-     with_items: [ '/mnt/nfs-backups', '/mnt/nfs-jupyterhub' ]
+     with_items: 
+     - '{{nfs.backup_dir}}'
+     - '{{nfs.jupyterhub_data_dir}}'
     
    - name: Add entry in /etc/fstab for NFS directory
      mount: 
-       name: /mnt/nfs-jupyterhub
+       name: '{{nfs.jupyterhub_data_dir}}'
        src: '{{nfs_server}}:/var/local/nfs/jupyterhub'
        fstype: nfs 
        opts: noauto,noexec,rsize=4096,hard,wsize=4096,intr
