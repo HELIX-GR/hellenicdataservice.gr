@@ -448,11 +448,11 @@ SwarmSpawner.mount_driver_config = property(lambda spawner: None)
 SwarmSpawner.escaped_name = property(lambda spawner: spawner.user.name.replace('@','__at__').replace('.','_'))
 
 c.SwarmSpawner.volumes = {
-    '/mnt/nfs-jupyterhub/notebooks/users/{username}/work': { 'bind': '/home/jovyan/work', 'mode': 'rw'},
-    '/mnt/nfs-jupyterhub/notebooks/users/{username}/local': { 'bind': '/home/jovyan/.local', 'mode': 'rw'},
-    '/mnt/nfs-jupyterhub/notebooks/users/{username}/ipython': { 'bind': '/home/jovyan/.ipython', 'mode': 'rw'},
-    '/mnt/nfs-jupyterhub/notebooks/users/{username}/jupyter': { 'bind': '/home/jovyan/.jupyter', 'mode': 'rw'},
-    '/mnt/nfs-jupyterhub/notebooks/users/{username}/temp': { 'bind': '/tmp', 'mode': 'rw'},
+    '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/work': { 'bind': '/home/jovyan/work', 'mode': 'rw'},
+    '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/local': { 'bind': '/home/jovyan/.local', 'mode': 'rw'},
+    '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/ipython': { 'bind': '/home/jovyan/.ipython', 'mode': 'rw'},
+    '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/jupyter': { 'bind': '/home/jovyan/.jupyter', 'mode': 'rw'},
+    '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/temp': { 'bind': '/tmp', 'mode': 'rw'},
 };
 
 ## Path to SSL certificate file for the public facing interface of the proxy
@@ -691,7 +691,7 @@ c.JupyterHub.ssl_key = '/etc/jupyterhub/server.key'
 #  limit to work.** The default spawner, `LocalProcessSpawner`, does **not**
 #  implement this support. A custom spawner **must** add support for this setting
 #  for it to be enforced.
-#c.Spawner.mem_limit = None
+c.Spawner.mem_limit = '{{jupyterhub.memory_limit| default("1G")}}'
 
 ## Path to the notebook directory for the single-user server.
 #  
