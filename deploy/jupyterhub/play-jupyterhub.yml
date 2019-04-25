@@ -81,7 +81,7 @@
    
    - name: Mount NFS directory for user data
      mount:
-       name: /mnt/nfs-jupyterhub
+       name: '{{nfs.jupyterhub_data_dir}}'
        src: '{{nfs_server}}:/var/local/nfs/jupyterhub'
        fstype: nfs 
        opts: noauto,noexec,rsize=4096,hard,wsize=4096,intr
@@ -93,4 +93,8 @@
    tasks:
 
    - name: Create directory structure for user data
-     file: path=/mnt/nfs-jupyterhub/work/users state=directory mode=0755
+     file: 
+       path: '{{nfs.jupyterhub_data_dir}}/work/users' 
+       state: directory 
+       mode: '0755'
+
