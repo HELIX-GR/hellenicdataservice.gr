@@ -527,7 +527,7 @@ c.JupyterHub.ssl_key = '/etc/jupyterhub/server.key'
 #  In JupyterHub 0.8, internally generated tokens do not pass through additional
 #  hashing because the hashing is costly and does not increase the entropy of
 #  already-good UUIDs.
-# nfs.jupyterhub_data_dir 
+#  
 #  User-provided tokens, on the other hand, are not trusted to have good entropy
 #  by default, and are passed through many rounds of hashing to stretch the
 #  entropy of the key (i.e. user-provided tokens are treated as passwords instead
