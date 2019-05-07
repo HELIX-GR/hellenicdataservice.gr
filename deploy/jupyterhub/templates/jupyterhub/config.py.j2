@@ -460,8 +460,8 @@ c.SwarmSpawner.network_name = 'jupyterhub_network'
 c.SwarmSpawner.extra_host_config = {'network_mode': 'jupyterhub_network'}
 c.SwarmSpawner.extra_container_spec = {'read_only': True}
 
-# The default (home) URL is /tree (set to /lab only for notebooks based on datascience-notebook)
-c.SwarmSpawner.default_url = '/tree'
+# The default (home) URL is /tree 
+c.SwarmSpawner.default_url = '/lab'
 
 # Note: Patch SwarmSpawner to prevent from adding a volume driver (non-applicable to bind mounts!)
 SwarmSpawner.mount_driver_config = property(lambda spawner: None)
