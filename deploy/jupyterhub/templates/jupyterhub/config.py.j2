@@ -458,6 +458,7 @@ SwarmSpawner.image = property(spawner_get_image)
 
 c.SwarmSpawner.network_name = 'jupyterhub_network'
 c.SwarmSpawner.extra_host_config = {'network_mode': 'jupyterhub_network'}
+c.SwarmSpawner.extra_container_spec = {'read_only': True}
 
 # The default (home) URL is /tree (set to /lab only for notebooks based on datascience-notebook)
 c.SwarmSpawner.default_url = '/tree'
@@ -469,9 +470,11 @@ SwarmSpawner.mount_driver_config = property(lambda spawner: None)
 SwarmSpawner.escaped_name = property(lambda spawner: spawner.user.name.replace('@','__at__').replace('.','_'))
 
 c.SwarmSpawner.volumes = {
-    '{{nfs.jupyterhub_data_dir}}/work/users/{username}': {
-        'bind': '/home/jovyan/work', # the target of our bind (container-local directory)
-        'mode': 'rw'},
+    '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/work': { 'bind': '/home/jovyan/work', 'mode': 'rw'},
+    '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/local': { 'bind': '/home/jovyan/.local', 'mode': 'rw'},
+    '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/ipython': { 'bind': '/home/jovyan/.ipython', 'mode': 'rw'},
+    '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/jupyter': { 'bind': '/home/jovyan/.jupyter', 'mode': 'rw'},
+    '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/temp': { 'bind': '/tmp', 'mode': 'rw'},
 };
 
 ## Path to SSL certificate file for the public facing interface of the proxy
