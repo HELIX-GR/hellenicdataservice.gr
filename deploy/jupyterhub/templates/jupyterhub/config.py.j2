@@ -437,6 +437,7 @@ c.JupyterHub.spawner_class = SwarmSpawner
 
 # Map a user's group to a docker image (the 1st match selects the image, so order matters)
 group_to_image = collections.OrderedDict([
+    ('dask', '{{jupyterhub.dask_notebook_image}}'),
     ('data-science', '{{jupyterhub.datascience_notebook_image}}'),
     ('standard', '{{jupyterhub.default_notebook_image}}'),
     (None, '{{jupyterhub.default_notebook_image}}'),
@@ -458,7 +459,12 @@ SwarmSpawner.image = property(spawner_get_image)
 
 c.SwarmSpawner.network_name = 'jupyterhub_network'
 c.SwarmSpawner.extra_host_config = {'network_mode': 'jupyterhub_network'}
-c.SwarmSpawner.extra_container_spec = {'read_only': True}
+c.SwarmSpawner.extra_container_spec = {
+    'read_only': True,
+    'hosts': {
+        'dask-scheduler': '{{dask_scheduler| default("127.0.0.1")}}'
+    },
+}
 
 # The default (home) URL is /tree 
 c.SwarmSpawner.default_url = '/lab'
@@ -471,6 +477,7 @@ SwarmSpawner.escaped_name = property(lambda spawner: spawner.user.name.replace('
 
 c.SwarmSpawner.volumes = {
     '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/work': { 'bind': '/home/jovyan/work', 'mode': 'rw'},
+    '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/config': { 'bind': '/home/jovyan/.config', 'mode': 'rw'},
     '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/local': { 'bind': '/home/jovyan/.local', 'mode': 'rw'},
     '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/ipython': { 'bind': '/home/jovyan/.ipython', 'mode': 'rw'},
     '{{nfs.jupyterhub_data_dir}}/notebooks/users/{username}/jupyter': { 'bind': '/home/jovyan/.jupyter', 'mode': 'rw'},

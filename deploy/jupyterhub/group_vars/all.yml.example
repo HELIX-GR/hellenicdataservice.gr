@@ -19,9 +19,10 @@ jupyterhub:
   registry: ~
   #registry: 'docker-registry.localdomain:8443'
 
-
   notebook_images:
   - 'jupyterhub/singleuser:0.9'
   - 'jupyter/datascience-notebook:77e10160c7ef'
+  - 'athena/dask-notebook:0.9a'
   default_notebook_image: 'jupyterhub/singleuser:0.9'
   datascience_notebook_image: 'jupyter/datascience-notebook:77e10160c7ef'
+  dask_notebook_image: 'athena/dask-notebook:0.9a'
